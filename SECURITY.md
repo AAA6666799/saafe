@@ -2,7 +2,7 @@
 
 ## Security Overview
 
-This document outlines the comprehensive security framework for the Saafe Fire Detection System, implementing enterprise-grade security controls based on 20+ years of cybersecurity best practices.
+This document outlines the comprehensive security framework for the Saafe Fire Detection System, implementing enterprise-grade security controls based on cybersecurity best practices.
 
 ## Security Architecture
 

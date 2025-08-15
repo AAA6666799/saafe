@@ -2,7 +2,6 @@
 
 # Saafe Fire Detection System - GitHub Deployment Script
 # This script initializes the git repository and pushes to GitHub
-# Built with 20+ years of DevOps expertise
 
 set -euo pipefail
 
@@ -59,8 +58,7 @@ COMMIT_MESSAGE="feat: initial enterprise-grade fire detection system
 - Monitoring and observability (Prometheus/Grafana)
 - Blue-green deployment strategy
 
-Built by experienced DevOps engineers with enterprise-grade
-standards and production-ready architecture.
+Built with enterprise-grade standards and production-ready architecture.
 
 Co-authored-by: DevOps Team <devops@saafe.com>
 Co-authored-by: Security Team <security@saafe.com>

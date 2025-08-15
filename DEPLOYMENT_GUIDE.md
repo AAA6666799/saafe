@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides comprehensive deployment instructions for the Saafe Fire Detection System across multiple environments, following enterprise DevOps best practices with 20+ years of operational experience.
+This guide provides comprehensive deployment instructions for the Saafe Fire Detection System across multiple environments, following enterprise DevOps best practices.
 
 ## Prerequisites
 

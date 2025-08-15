@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Saafe is an enterprise-grade AI-powered fire detection and prevention system designed for mission-critical environments. Built with 20+ years of DevOps expertise, this MVP demonstrates production-ready architecture with real-time monitoring, intelligent alerting, and comprehensive safety protocols.
+Saafe is an enterprise-grade AI-powered fire detection and prevention system designed for mission-critical environments. This MVP demonstrates production-ready architecture with real-time monitoring, intelligent alerting, and comprehensive safety protocols.
 
 ## 🏗️ Architecture Overview
 
