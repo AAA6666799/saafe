@@ -329,10 +329,6 @@ python -m cProfile -o profile.stats main.py
 - **Discussions**: Community Q&A and ideas
 - **Wiki**: Additional documentation and tutorials
 
-### Enterprise Support
-- **Professional Services**: Implementation and customization
-- **Training Programs**: Technical and operational training
-- **24/7 Support**: Mission-critical support packages
 
 **🏢 Enterprise Ready** | **🔒 Security First** | **📈 Production Proven** | **🌍 Globally Scalable**
 
