@@ -1,9 +1,8 @@
-# Saafe Fire Detection System - Enterprise MVP
+# Saafe AI Fire Detection System - Enterprise MVP
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/AAA6666799/saafe)
 [![Security Scan](https://img.shields.io/badge/security-verified-green)](https://github.com/AAA6666799/saafe)
 [![Code Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)](https://github.com/AAA6666799/saafe)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)](https://python.org)
 
 ## Executive Summary
@@ -315,10 +314,6 @@ python -m cProfile -o profile.stats main.py
 - **[Backup Procedures](docs/BACKUP.md)**: Data protection strategies
 - **[Disaster Recovery](docs/DISASTER_RECOVERY.md)**: Business continuity
 
-## 🤝 Contributing
-
-We welcome contributions from the community. Please read our [Contributing Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting pull requests.
-
 ### Development Setup
 1. Fork the repository
 2. Create a feature branch
@@ -326,10 +321,6 @@ We welcome contributions from the community. Please read our [Contributing Guide
 4. Add tests for new functionality
 5. Ensure all tests pass
 6. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
@@ -343,26 +334,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Training Programs**: Technical and operational training
 - **24/7 Support**: Mission-critical support packages
 
-## 🗺️ Roadmap
-
-### Phase 2 (Q2 2025)
-- **IoT Integration**: Hardware sensor support
-- **Mobile Applications**: iOS and Android apps
-- **Advanced Analytics**: Predictive fire modeling
-- **API Gateway**: Third-party integrations
-
-### Phase 3 (Q4 2025)
-- **Multi-tenant Architecture**: SaaS deployment
-- **Global Deployment**: Multi-region support
-- **Advanced Reporting**: Business intelligence
-- **Integration Hub**: ERP/CRM connectivity
-
----
-
 **🏢 Enterprise Ready** | **🔒 Security First** | **📈 Production Proven** | **🌍 Globally Scalable**
 
-For technical questions, contact: [technical-support@saafe.com](mailto:technical-support@saafe.com)  
-For business inquiries, contact: [business@saafe.com](mailto:business@saafe.com)
-
 ---
-*Built with ❤️ by the Saafe Engineering Team*
+*Built with ❤️ by Ajay Kumar*
