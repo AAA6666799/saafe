@@ -1,0 +1,143 @@
+# Saafe Fire Detection System - Prometheus Alert Rules
+# Enterprise alerting rules for system monitoring and fire detection
+
+groups:
+  - name: saafe.fire_detection
+    rules:
+      - alert: FireDetected
+        expr: saafe_fire_detected == 1
+        for: 0s
+        labels:
+          severity: critical
+          service: fire_detection
+        annotations:
+          summary: "Fire detected by Saafe system"
+          description: "Fire has been detected with confidence {{ $value }}. Immediate action required."
+
+      - alert: HighFireRisk
+        expr: saafe_fire_risk_level > 0.8
+        for: 30s
+        labels:
+          severity: warning
+          service: fire_detection
+        annotations:
+          summary: "High fire risk detected"
+          description: "Fire risk level is {{ $value }}, which is above the warning threshold."
+
+      - alert: SensorOffline
+        expr: up{job="saafe-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: sensors
+        annotations:
+          summary: "Saafe sensor system offline"
+          description: "The Saafe fire detection system has been offline for more than 1 minute."
+
+  - name: saafe.system_health
+    rules:
+      - alert: HighCPUUsage
+        expr: (100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Disk space critically low"
+          description: "Disk usage is {{ $value }}% on {{ $labels.instance }} {{ $labels.mountpoint }}"
+
+  - name: saafe.application
+    rules:
+      - alert: ApplicationDown
+        expr: up{job="saafe-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: application
+        annotations:
+          summary: "Saafe application is down"
+          description: "The Saafe fire detection application has been down for more than 1 minute."
+
+      - alert: HighResponseTime
+        expr: saafe_http_request_duration_seconds{quantile="0.95"} > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: application
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s"
+
+      - alert: HighErrorRate
+        expr: rate(saafe_http_requests_total{status=~"5.."}[5m]) / rate(saafe_http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: application
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }}"
+
+  - name: saafe.redis
+    rules:
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache service has been down for more than 1 minute."
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Redis memory usage is {{ $value | humanizePercentage }}"
+
+  - name: saafe.model_performance
+    rules:
+      - alert: ModelAccuracyDrop
+        expr: saafe_model_accuracy < 0.95
+        for: 10m
+        labels:
+          severity: warning
+          service: ml_model
+        annotations:
+          summary: "Model accuracy has dropped"
+          description: "Fire detection model accuracy is {{ $value }}, below acceptable threshold."
+
+      - alert: ModelInferenceLatency
+        expr: saafe_model_inference_duration_seconds > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: ml_model
+        annotations:
+          summary: "Model inference latency high"
+          description: "Model inference is taking {{ $value }}s, which may impact real-time detection."

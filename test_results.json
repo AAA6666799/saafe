@@ -1,0 +1,58 @@
+{
+  "overall_status": "FAIL",
+  "passed_tests": 1,
+  "total_tests": 8,
+  "success_rate": 12.5,
+  "duration": 1.0774428844451904,
+  "detailed_results": {
+    "Environment Setup": {
+      "status": "PASS",
+      "details": "Python 3.9.6",
+      "duration": 0.0001227855682373047,
+      "timestamp": 1754233654.675445
+    },
+    "Library Installation": {
+      "status": "FAIL",
+      "details": "Failed imports: torch (PyTorch for deep learning): No module named 'torch'; pandas (Pandas for data manipulation): No module named 'pandas'; matplotlib (Matplotlib for plotting): No module named 'matplotlib'; seaborn (Seaborn for statistical visualization): No module named 'seaborn'; sklearn (Scikit-learn for machine learning utilities): No module named 'sklearn'; ipywidgets (IPython widgets for interactive UI): No module named 'ipywidgets'",
+      "duration": 1.076908826828003,
+      "timestamp": 1754233655.7523699
+    },
+    "Device Configuration": {
+      "status": "FAIL",
+      "details": "No module named 'torch'",
+      "duration": 4.410743713378906e-05,
+      "timestamp": 1754233655.7524312
+    },
+    "Data Generation": {
+      "status": "FAIL",
+      "details": "No module named 'torch'",
+      "duration": 4.1961669921875e-05,
+      "timestamp": 1754233655.752482
+    },
+    "Model Architecture": {
+      "status": "FAIL",
+      "details": "No module named 'torch'",
+      "duration": 4.100799560546875e-05,
+      "timestamp": 1754233655.7525299
+    },
+    "Scenario Validation": {
+      "status": "FAIL",
+      "details": "No module named 'torch'",
+      "duration": 4.00543212890625e-05,
+      "timestamp": 1754233655.752577
+    },
+    "UI Components": {
+      "status": "FAIL",
+      "details": "Widget libraries not available: No module named 'ipywidgets'",
+      "duration": 4.100799560546875e-05,
+      "timestamp": 1754233655.752624
+    },
+    "Performance Benchmarks": {
+      "status": "FAIL",
+      "details": "No module named 'torch'",
+      "duration": 4.00543212890625e-05,
+      "timestamp": 1754233655.752671
+    }
+  },
+  "errors": []
+}

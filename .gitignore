@@ -1,0 +1,85 @@
+# Saafe MVP - Git Ignore Rules
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+safeguard_env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# PyTorch Models
+models/saved/
+*.pth
+*.pt
+
+# Logs
+logs/
+*.log
+
+# Exports
+exports/
+*.pdf
+*.csv
+
+# Temporary Files
+temp/
+tmp/
+*.tmp
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Environment Variables
+.env.local
+.env.production
+
+# Coverage Reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Pytest
+.pytest_cache/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json

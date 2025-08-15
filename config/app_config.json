@@ -1,0 +1,44 @@
+{
+  "app": {
+    "name": "Saafe Fire Detection MVP",
+    "version": "1.0.0",
+    "debug": false
+  },
+  "models": {
+    "transformer_path": "models/transformer_model.pth",
+    "anti_hallucination_path": "models/anti_hallucination.pkl",
+    "device": "auto"
+  },
+  "ui": {
+    "theme": "light",
+    "update_frequency": 1,
+    "port": 8501
+  },
+  "notifications": {
+    "sms_enabled": false,
+    "email_enabled": false,
+    "push_enabled": true,
+    "phone_numbers": [],
+    "email_addresses": []
+  },
+  "alerts": {
+    "thresholds": {
+      "normal": [
+        0,
+        30
+      ],
+      "mild": [
+        31,
+        50
+      ],
+      "elevated": [
+        51,
+        85
+      ],
+      "critical": [
+        86,
+        100
+      ]
+    }
+  }
+}
