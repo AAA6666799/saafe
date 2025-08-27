@@ -1,0 +1,106 @@
+# Production environment configuration for the synthetic fire prediction system
+
+# System configuration
+system:
+  log_level: "WARNING"  # Less verbose logging in production
+  data_dir: "/data/prod"  # Absolute paths for production
+  models_dir: "/models/prod"
+
+# Hardware configuration
+hardware:
+  # Use real sensor configurations in production
+  thermal_sensors:
+    thermal_sensor_1:
+      noise_level: 0.5  # Lower noise for production sensors
+      calibration_interval: 86400  # Daily calibration
+  
+  gas_sensors:
+    gas_sensor_1:
+      # Production thresholds based on safety standards
+      methane_threshold: 100.0
+      propane_threshold: 100.0
+      hydrogen_threshold: 100.0
+      calibration_interval: 86400  # Daily calibration
+  
+  environmental_sensors:
+    env_sensor_1:
+      calibration_interval: 86400  # Daily calibration
+
+# Data generation configuration
+data_generation:
+  # Full-scale datasets for production
+  scenarios:
+    normal_duration: 3600  # 1 hour
+    fire_duration: 600     # 10 minutes
+
+# Feature engineering configuration
+feature_engineering:
+  # Disable debug visualizations in production
+  thermal:
+    debug_visualization: false
+  
+  gas:
+    debug_visualization: false
+  
+  environmental:
+    debug_visualization: false
+
+# Model configuration
+models:
+  baseline:
+    # Full-scale models for production
+    n_estimators: 200
+    max_depth: 15
+  
+  temporal:
+    # Larger network for better accuracy
+    hidden_size: 128
+    num_layers: 3
+    sequence_length: 60
+
+# Agent configuration
+agents:
+  # Production settings
+  monitoring:
+    debug_mode: false
+    anomaly_threshold: 0.9  # Higher threshold to reduce false positives
+  
+  analysis:
+    debug_mode: false
+    confidence_threshold: 0.8  # Higher threshold for production
+  
+  response:
+    debug_mode: false
+    # Standard thresholds for production
+    alert_thresholds: [0.2, 0.4, 0.6, 0.8]
+  
+  learning:
+    debug_mode: false
+    # Standard retraining interval
+    retraining_interval: 86400  # 24 hours
+
+# AWS configuration
+aws:
+  region: "us-west-2"
+  profile: "production"
+  
+  s3:
+    default_bucket: "prod-synthetic-fire-prediction-data"
+    model_bucket: "prod-synthetic-fire-prediction-models"
+  
+  sagemaker:
+    role_arn: "arn:aws:iam::123456789012:role/ProdSageMakerExecutionRole"
+    instance_type: "ml.c5.2xlarge"  # More powerful instance for production
+  
+  lambda:
+    alert_function: "prod-synthetic-fire-prediction-alert"
+  
+  cloudwatch:
+    log_group: "prod-synthetic-fire-prediction-logs"
+    metrics_namespace: "ProdSyntheticFirePrediction"
+    alarm_sns_topic: "arn:aws:sns:us-west-2:123456789012:fire-prediction-alerts"
+
+# Secrets configuration
+secrets:
+  use_aws_secrets_manager: true  # Use AWS Secrets Manager in production
+  secrets_file: "config/secrets/prod_secrets.json"  # Fallback only

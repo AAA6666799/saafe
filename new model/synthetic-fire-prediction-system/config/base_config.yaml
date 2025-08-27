@@ -1,0 +1,152 @@
+# Base configuration for the synthetic fire prediction system
+
+# System configuration
+system:
+  name: "Synthetic Fire Prediction System"
+  version: "0.1.0"
+  log_level: "INFO"
+  data_dir: "data"
+  models_dir: "models"
+
+# Hardware configuration
+hardware:
+  thermal_sensors:
+    thermal_sensor_1:
+      width: 384
+      height: 288
+      min_temp: 0.0
+      max_temp: 500.0
+      ambient_temp: 25.0
+      noise_level: 1.0
+  
+  gas_sensors:
+    gas_sensor_1:
+      supported_gases: ["methane", "propane", "hydrogen"]
+      methane_baseline: 0.0
+      methane_threshold: 100.0
+      propane_baseline: 0.0
+      propane_threshold: 100.0
+      hydrogen_baseline: 0.0
+      hydrogen_threshold: 100.0
+  
+  environmental_sensors:
+    env_sensor_1:
+      base_temperature: 25.0
+      base_humidity: 50.0
+      base_pressure: 1013.25
+      supported_vocs: ["benzene", "formaldehyde", "toluene"]
+      benzene_base: 0.1
+      formaldehyde_base: 0.1
+      toluene_base: 0.1
+
+# Data generation configuration
+data_generation:
+  thermal:
+    resolution: [384, 288]
+    frame_rate: 10  # frames per second
+    temperature_range: [0, 500]  # degrees Celsius
+  
+  gas:
+    sample_rate: 1.0  # Hz
+    gases: ["methane", "propane", "hydrogen"]
+  
+  environmental:
+    sample_rate: 1.0  # Hz
+    parameters: ["temperature", "humidity", "pressure"]
+    vocs: ["benzene", "formaldehyde", "toluene"]
+  
+  scenarios:
+    normal_duration: 3600  # seconds
+    fire_duration: 600  # seconds
+    types: ["normal", "electrical_fire", "chemical_fire", "smoldering_fire", "rapid_combustion"]
+
+# Feature engineering configuration
+feature_engineering:
+  thermal:
+    max_temperature: true
+    mean_temperature: true
+    hotspot_area_percentage: true
+    temperature_rise_slope: true
+    entropy: true
+  
+  gas:
+    concentration_slope: true
+    peak_detection: true
+    exceedance_tracking: true
+    z_score_anomaly: true
+  
+  environmental:
+    voc_slope: true
+    dew_point: true
+    anomaly_detection: true
+  
+  fusion:
+    hotspot_gas_concurrence: true
+    cross_sensor_correlation: true
+    risk_score_weights:
+      thermal: 0.4
+      gas: 0.4
+      environmental: 0.2
+
+# Model configuration
+models:
+  baseline:
+    type: "random_forest"
+    n_estimators: 100
+    max_depth: 10
+    random_state: 42
+  
+  temporal:
+    type: "lstm"
+    hidden_size: 64
+    num_layers: 2
+    dropout: 0.2
+    sequence_length: 30
+  
+  ensemble:
+    models: ["baseline", "temporal"]
+    weights: [0.5, 0.5]
+    voting: "soft"
+
+# Agent configuration
+agents:
+  monitoring:
+    anomaly_threshold: 0.8
+    baseline_update_interval: 3600  # seconds
+  
+  analysis:
+    confidence_threshold: 0.7
+    historical_window: 3600  # seconds
+  
+  response:
+    risk_levels: 5
+    alert_thresholds: [0.2, 0.4, 0.6, 0.8]
+  
+  learning:
+    performance_metrics: ["accuracy", "precision", "recall", "f1"]
+    retraining_interval: 86400  # seconds
+
+# AWS configuration
+aws:
+  region: "us-west-2"
+  profile: "default"
+  
+  s3:
+    default_bucket: "synthetic-fire-prediction-data"
+    model_bucket: "synthetic-fire-prediction-models"
+  
+  sagemaker:
+    role_arn: "arn:aws:iam::123456789012:role/SageMakerExecutionRole"
+    instance_type: "ml.m5.large"
+  
+  lambda:
+    alert_function: "synthetic-fire-prediction-alert"
+  
+  cloudwatch:
+    log_group: "synthetic-fire-prediction-logs"
+    metrics_namespace: "SyntheticFirePrediction"
+
+# Secrets configuration
+secrets:
+  use_aws_secrets_manager: false
+  secrets_file: "config/secrets/secrets.json"

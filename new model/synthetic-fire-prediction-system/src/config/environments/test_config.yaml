@@ -1,0 +1,106 @@
+# Test environment configuration for the synthetic fire prediction system
+
+# System configuration
+system:
+  log_level: "INFO"
+  data_dir: "data/test"
+  models_dir: "models/test"
+
+# Hardware configuration
+hardware:
+  # Use mock sensors with controlled parameters for testing
+  thermal_sensors:
+    thermal_sensor_1:
+      noise_level: 0.5  # Low noise for predictable test results
+  
+  gas_sensors:
+    gas_sensor_1:
+      # Consistent thresholds for testing
+      methane_threshold: 75.0
+      propane_threshold: 75.0
+      hydrogen_threshold: 75.0
+  
+  environmental_sensors:
+    env_sensor_1:
+      # Fixed values for testing
+      base_temperature: 20.0
+      base_humidity: 50.0
+      base_pressure: 1013.25
+
+# Data generation configuration
+data_generation:
+  # Small datasets for quick testing
+  scenarios:
+    normal_duration: 300  # 5 minutes
+    fire_duration: 120    # 2 minutes
+
+# Feature engineering configuration
+feature_engineering:
+  # Enable test-specific features
+  thermal:
+    debug_visualization: true
+  
+  gas:
+    debug_visualization: true
+  
+  environmental:
+    debug_visualization: true
+
+# Model configuration
+models:
+  baseline:
+    # Minimal models for fast testing
+    n_estimators: 10
+    max_depth: 3
+  
+  temporal:
+    # Minimal network for fast testing
+    hidden_size: 16
+    num_layers: 1
+    sequence_length: 10
+
+# Agent configuration
+agents:
+  # Test-specific settings
+  monitoring:
+    debug_mode: true
+    anomaly_threshold: 0.5  # Lower threshold for easier testing
+  
+  analysis:
+    debug_mode: true
+    confidence_threshold: 0.5  # Lower threshold for easier testing
+  
+  response:
+    debug_mode: true
+    # Lower thresholds for easier testing
+    alert_thresholds: [0.1, 0.2, 0.3, 0.4]
+  
+  learning:
+    debug_mode: true
+    # More frequent retraining for testing
+    retraining_interval: 1800  # 30 minutes
+
+# AWS configuration
+aws:
+  # Use localstack for testing
+  endpoint_url: "http://localhost:4566"
+  
+  s3:
+    default_bucket: "test-synthetic-fire-prediction-data"
+    model_bucket: "test-synthetic-fire-prediction-models"
+  
+  sagemaker:
+    # Use local mode for testing
+    use_local_mode: true
+  
+  lambda:
+    alert_function: "test-synthetic-fire-prediction-alert"
+  
+  cloudwatch:
+    log_group: "test-synthetic-fire-prediction-logs"
+    metrics_namespace: "TestSyntheticFirePrediction"
+
+# Secrets configuration
+secrets:
+  use_aws_secrets_manager: false
+  secrets_file: "config/secrets/test_secrets.json"

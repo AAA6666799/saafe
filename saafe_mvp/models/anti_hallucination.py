@@ -249,33 +249,66 @@ class EnsembleFireDetector:
             logger.warning(f"Invalid strategy. Valid options: {valid_strategies}")
 
 
-class CookingPatternDetector:
+class IoTAreaPatternDetector:
     """
-    Detects cooking-specific patterns to prevent false fire alarms during cooking activities.
-    Identifies characteristic cooking signatures: elevated PM2.5/CO₂ without sustained high temperature.
+    Detects area-specific patterns to prevent false alarms in IoT fire detection system.
+    Handles different sensor types and their characteristic patterns across different areas.
     """
     
     def __init__(self, device: Optional[torch.device] = None):
         """
-        Initialize the cooking pattern detector.
+        Initialize the IoT area pattern detector.
         
         Args:
             device (torch.device): Device for tensor operations
         """
         self.device = device or torch.device('cpu')
         
-        # Cooking pattern thresholds
-        self.cooking_thresholds = {
-            'pm25_elevated': 30.0,      # PM2.5 threshold for cooking detection
-            'co2_elevated': 600.0,      # CO₂ threshold for cooking detection
-            'temp_max_cooking': 35.0,   # Maximum temperature for cooking (not fire)
-            'temp_gradient_max': 2.0,   # Max temperature gradient for cooking
-            'duration_threshold': 10,   # Minimum duration for pattern detection
-            'pm25_co2_ratio_min': 0.02, # Minimum PM2.5/CO₂ ratio for cooking
-            'pm25_co2_ratio_max': 0.15  # Maximum PM2.5/CO₂ ratio for cooking
+        # Area-specific pattern thresholds
+        self.area_thresholds = {
+            'kitchen': {
+                'voc_normal_cooking': 180.0,    # Normal cooking VOC levels
+                'voc_overheating': 250.0,       # Overheating appliance threshold
+                'voc_fire': 350.0,              # Fire-level VOC
+                'gradient_cooking': 20.0,       # VOC rise rate for cooking
+                'gradient_fire': 50.0,          # VOC rise rate for fire
+                'duration_threshold': 15        # Minutes for pattern detection
+            },
+            'electrical': {
+                'arc_normal': 0,                # Normal arc count
+                'arc_degradation': 2,           # Wiring degradation threshold
+                'arc_critical': 8,              # Critical arc fault level
+                'frequency_threshold': 5,       # Arcs per hour
+                'pattern_duration': 24          # Hours for degradation pattern
+            },
+            'laundry_hvac': {
+                'temp_normal': 30.0,            # Normal operating temperature
+                'temp_stress': 45.0,            # Motor stress temperature
+                'temp_critical': 60.0,          # Critical temperature
+                'current_normal': 0.8,          # Normal current draw
+                'current_stress': 1.5,          # Stress current level
+                'current_critical': 2.5,        # Critical current level
+                'correlation_threshold': 0.7    # Temp-current correlation
+            },
+            'living_bedroom': {
+                'particle_normal': 6.0,         # Normal particle levels
+                'particle_smolder': 9.0,        # Smoldering detection
+                'particle_fire': 15.0,          # Active fire detection
+                'rise_rate_smolder': 0.5,       # Particles/minute for smoldering
+                'rise_rate_fire': 2.0,          # Particles/minute for fire
+                'sensitivity_factor': 0.8       # ASD sensitivity adjustment
+            },
+            'basement_storage': {
+                'gas_normal': 12.0,             # Normal gas levels
+                'gas_offgassing': 18.0,         # Chemical off-gassing
+                'gas_fire': 30.0,               # Fire-related gas levels
+                'temp_trend_threshold': 3.0,    # Temperature trend (°C/hour)
+                'humidity_correlation': 0.6,    # Gas-humidity correlation
+                'multi_factor_threshold': 2     # Number of factors for confirmation
+            }
         }
         
-        logger.info("CookingPatternDetector initialized")
+        logger.info("IoTAreaPatternDetector initialized")
     
     def detect_cooking_patterns(self, sensor_data: torch.Tensor, window_size: int = 20) -> Dict[str, Any]:
         """

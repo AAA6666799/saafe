@@ -15,15 +15,59 @@ from dataclasses import dataclass
 
 @dataclass
 class ModelConfig:
-    """Configuration class for the Spatio-Temporal Transformer model."""
-    num_sensors: int = 4
-    feature_dim: int = 4  # temperature, PM2.5, CO2, audio
+    """Configuration class for the IoT-based Predictive Fire Detection Transformer model."""
+    # Area-based sensor configuration
+    areas: Dict[str, Dict[str, Any]] = None
     d_model: int = 256
     num_heads: int = 8
     num_layers: int = 6
     max_seq_length: int = 512
     dropout: float = 0.1
-    num_classes: int = 3  # normal, cooking, fire
+    num_risk_levels: int = 4  # immediate, hours, days, weeks
+    
+    def __post_init__(self):
+        if self.areas is None:
+            self.areas = {
+                'kitchen': {
+                    'sensor_type': 'voc_ml',
+                    'features': ['voc_level'],
+                    'feature_dim': 1,
+                    'lead_time_range': 'minutes_hours',
+                    'vendor': 'honeywell_mics'
+                },
+                'electrical': {
+                    'sensor_type': 'arc_detection',
+                    'features': ['arc_count'],
+                    'feature_dim': 1,
+                    'lead_time_range': 'days_weeks',
+                    'vendor': 'ting_eaton'
+                },
+                'laundry_hvac': {
+                    'sensor_type': 'thermal_current',
+                    'features': ['temperature', 'current'],
+                    'feature_dim': 2,
+                    'lead_time_range': 'hours_days',
+                    'vendor': 'honeywell_thermal'
+                },
+                'living_bedroom': {
+                    'sensor_type': 'aspirating_smoke',
+                    'features': ['particle_level'],
+                    'feature_dim': 1,
+                    'lead_time_range': 'minutes_hours',
+                    'vendor': 'xtralis_vesda'
+                },
+                'basement_storage': {
+                    'sensor_type': 'environmental_iot',
+                    'features': ['temperature', 'humidity', 'gas_levels'],
+                    'feature_dim': 3,
+                    'lead_time_range': 'hours_days',
+                    'vendor': 'bosch_airthings'
+                }
+            }
+        
+        # Calculate total features across all areas
+        self.total_feature_dim = sum(area['feature_dim'] for area in self.areas.values())
+        self.num_areas = len(self.areas)
 
 
 class SpatialAttentionLayer(nn.Module):
@@ -60,37 +104,37 @@ class SpatialAttentionLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.layer_norm = nn.LayerNorm(d_model)
         
-        # Spatial position encoding for sensor locations
-        self.spatial_encoding = nn.Parameter(torch.randn(4, d_model))  # 4 sensors
+        # Spatial position encoding for different areas (5 areas)
+        self.spatial_encoding = nn.Parameter(torch.randn(5, d_model))  # 5 areas
     
     def forward(self, x: torch.Tensor, spatial_mask: torch.Tensor = None) -> torch.Tensor:
         """
         Forward pass of spatial attention.
         
         Args:
-            x (torch.Tensor): Input tensor (batch_size, seq_len, num_sensors, d_model)
+            x (torch.Tensor): Input tensor (batch_size, seq_len, num_areas, d_model)
             spatial_mask (torch.Tensor): Optional spatial attention mask
             
         Returns:
             torch.Tensor: Output with spatial attention applied
         """
-        batch_size, seq_len, num_sensors, d_model = x.shape
+        batch_size, seq_len, num_areas, d_model = x.shape
         
         # Add spatial position encoding
         x_with_pos = x + self.spatial_encoding.unsqueeze(0).unsqueeze(0)
         
-        # Reshape for attention computation: (batch_size * seq_len, num_sensors, d_model)
-        x_reshaped = x_with_pos.view(batch_size * seq_len, num_sensors, d_model)
+        # Reshape for attention computation: (batch_size * seq_len, num_areas, d_model)
+        x_reshaped = x_with_pos.view(batch_size * seq_len, num_areas, d_model)
         
         # Compute Q, K, V projections
-        Q = self.query_projection(x_reshaped)  # (batch_size * seq_len, num_sensors, d_model)
+        Q = self.query_projection(x_reshaped)  # (batch_size * seq_len, num_areas, d_model)
         K = self.key_projection(x_reshaped)
         V = self.value_projection(x_reshaped)
         
         # Reshape for multi-head attention
-        Q = Q.view(batch_size * seq_len, num_sensors, self.num_heads, self.head_dim).transpose(1, 2)
-        K = K.view(batch_size * seq_len, num_sensors, self.num_heads, self.head_dim).transpose(1, 2)
-        V = V.view(batch_size * seq_len, num_sensors, self.num_heads, self.head_dim).transpose(1, 2)
+        Q = Q.view(batch_size * seq_len, num_areas, self.num_heads, self.head_dim).transpose(1, 2)
+        K = K.view(batch_size * seq_len, num_areas, self.num_heads, self.head_dim).transpose(1, 2)
+        V = V.view(batch_size * seq_len, num_areas, self.num_heads, self.head_dim).transpose(1, 2)
         
         # Compute attention scores
         attention_scores = torch.matmul(Q, K.transpose(-2, -1)) / np.sqrt(self.head_dim)
@@ -108,14 +152,14 @@ class SpatialAttentionLayer(nn.Module):
         
         # Reshape back to original dimensions
         attended_values = attended_values.transpose(1, 2).contiguous().view(
-            batch_size * seq_len, num_sensors, d_model
+            batch_size * seq_len, num_areas, d_model
         )
         
         # Apply output projection
         output = self.output_projection(attended_values)
         
         # Reshape back to original tensor shape
-        output = output.view(batch_size, seq_len, num_sensors, d_model)
+        output = output.view(batch_size, seq_len, num_areas, d_model)
         
         # Residual connection and layer normalization
         output = self.layer_norm(output + x)
@@ -426,15 +470,20 @@ class SpatioTemporalTransformer(nn.Module):
             config = ModelConfig()
         
         self.config = config
-        self.num_sensors = config.num_sensors
-        self.feature_dim = config.feature_dim
+        self.num_areas = config.num_areas
+        self.total_feature_dim = config.total_feature_dim
         self.d_model = config.d_model
         self.num_heads = config.num_heads
         self.num_layers = config.num_layers
-        self.num_classes = config.num_classes
+        self.num_risk_levels = config.num_risk_levels
         
-        # Input embedding layer
-        self.input_embedding = nn.Linear(config.feature_dim, config.d_model)
+        # Area-specific input embedding layers
+        self.area_embeddings = nn.ModuleDict()
+        for area_name, area_config in config.areas.items():
+            self.area_embeddings[area_name] = nn.Linear(area_config['feature_dim'], config.d_model)
+        
+        # Combined feature embedding for heterogeneous data
+        self.feature_fusion = nn.Linear(config.d_model * config.num_areas, config.d_model)
         
         # Transformer layers
         self.transformer_layers = nn.ModuleList([
@@ -447,21 +496,34 @@ class SpatioTemporalTransformer(nn.Module):
         ])
         
         # Output layers
-        self.global_pooling = nn.AdaptiveAvgPool2d((1, config.d_model))  # Pool over time and sensors
-        self.classifier = nn.Sequential(
+        self.global_pooling = nn.AdaptiveAvgPool2d((1, config.d_model))  # Pool over time and areas
+        
+        # Lead time prediction head (minutes, hours, days, weeks)
+        self.lead_time_classifier = nn.Sequential(
             nn.Linear(config.d_model, config.d_model // 2),
             nn.ReLU(),
             nn.Dropout(config.dropout),
-            nn.Linear(config.d_model // 2, config.num_classes)
+            nn.Linear(config.d_model // 2, config.num_risk_levels)
         )
         
-        # Risk score regression head (0-100 scale)
-        self.risk_regressor = nn.Sequential(
+        # Area-specific risk assessment heads
+        self.area_risk_heads = nn.ModuleDict()
+        for area_name in config.areas.keys():
+            self.area_risk_heads[area_name] = nn.Sequential(
+                nn.Linear(config.d_model, config.d_model // 4),
+                nn.ReLU(),
+                nn.Dropout(config.dropout),
+                nn.Linear(config.d_model // 4, 1),
+                nn.Sigmoid()  # 0-1 risk probability
+            )
+        
+        # Time-to-ignition regression head (in hours)
+        self.time_to_ignition = nn.Sequential(
             nn.Linear(config.d_model, config.d_model // 2),
             nn.ReLU(),
             nn.Dropout(config.dropout),
             nn.Linear(config.d_model // 2, 1),
-            nn.Sigmoid()  # Output between 0 and 1, will be scaled to 0-100
+            nn.ReLU()  # Positive time values
         )
         
         # Initialize weights
@@ -480,27 +542,44 @@ class SpatioTemporalTransformer(nn.Module):
                 nn.init.constant_(module.bias, 0)
                 nn.init.constant_(module.weight, 1.0)
     
-    def forward(self, x: torch.Tensor, 
+    def forward(self, area_data: Dict[str, torch.Tensor], 
                 spatial_mask: torch.Tensor = None, 
                 temporal_mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         """
-        Forward pass of the Spatio-Temporal Transformer.
+        Forward pass of the IoT-based Predictive Fire Detection Transformer.
         
         Args:
-            x (torch.Tensor): Input tensor (batch_size, seq_len, num_sensors, feature_dim)
+            area_data (Dict[str, torch.Tensor]): Dictionary of area-specific sensor data
+                - Each key is area name, value is tensor (batch_size, seq_len, feature_dim)
             spatial_mask (torch.Tensor): Optional spatial attention mask
             temporal_mask (torch.Tensor): Optional temporal attention mask
             
         Returns:
             Dict[str, torch.Tensor]: Dictionary containing:
-                - 'logits': Classification logits (batch_size, num_classes)
-                - 'risk_score': Risk scores 0-100 (batch_size, 1)
+                - 'lead_time_logits': Lead time classification (batch_size, num_risk_levels)
+                - 'area_risks': Area-specific risk scores (batch_size, num_areas)
+                - 'time_to_ignition': Predicted time to ignition in hours (batch_size, 1)
                 - 'features': Final feature representations (batch_size, d_model)
         """
-        batch_size, seq_len, num_sensors, feature_dim = x.shape
+        batch_size = next(iter(area_data.values())).shape[0]
+        seq_len = next(iter(area_data.values())).shape[1]
         
-        # Input embedding
-        embedded = self.input_embedding(x)  # (batch_size, seq_len, num_sensors, d_model)
+        # Process each area's data through its specific embedding
+        area_embeddings = []
+        for area_name in self.config.areas.keys():
+            if area_name in area_data:
+                area_tensor = area_data[area_name]  # (batch_size, seq_len, feature_dim)
+                embedded = self.area_embeddings[area_name](area_tensor)  # (batch_size, seq_len, d_model)
+                area_embeddings.append(embedded)
+            else:
+                # Handle missing area data with zeros
+                feature_dim = self.config.areas[area_name]['feature_dim']
+                zero_data = torch.zeros(batch_size, seq_len, feature_dim, device=next(iter(area_data.values())).device)
+                embedded = self.area_embeddings[area_name](zero_data)
+                area_embeddings.append(embedded)
+        
+        # Stack area embeddings: (batch_size, seq_len, num_areas, d_model)
+        embedded = torch.stack(area_embeddings, dim=2)
         
         # Apply transformer layers
         hidden_states = embedded
@@ -515,19 +594,29 @@ class SpatioTemporalTransformer(nn.Module):
             attention_weights.append(layer_attention)
         
         # Global pooling to get fixed-size representation
-        # Pool over both time and sensor dimensions
-        pooled_features = self.global_pooling(hidden_states.view(batch_size, seq_len * num_sensors, self.d_model))
+        # Pool over both time and area dimensions
+        pooled_features = self.global_pooling(hidden_states.view(batch_size, seq_len * self.num_areas, self.d_model))
         pooled_features = pooled_features.squeeze(1)  # (batch_size, d_model)
         
-        # Classification head
-        logits = self.classifier(pooled_features)
+        # Lead time classification (immediate, hours, days, weeks)
+        lead_time_logits = self.lead_time_classifier(pooled_features)
         
-        # Risk score regression head (scale from [0,1] to [0,100])
-        risk_score = self.risk_regressor(pooled_features) * 100.0
+        # Area-specific risk assessment
+        area_risks = {}
+        for area_name in self.config.areas.keys():
+            area_risks[area_name] = self.area_risk_heads[area_name](pooled_features)
+        
+        # Combine area risks into tensor
+        area_risk_tensor = torch.cat([area_risks[area] for area in self.config.areas.keys()], dim=1)
+        
+        # Time-to-ignition prediction (in hours)
+        time_to_ignition = self.time_to_ignition(pooled_features)
         
         return {
-            'logits': logits,
-            'risk_score': risk_score,
+            'lead_time_logits': lead_time_logits,
+            'area_risks': area_risk_tensor,
+            'area_risk_dict': area_risks,
+            'time_to_ignition': time_to_ignition,
             'features': pooled_features,
             'attention_weights': attention_weights
         }

@@ -66,6 +66,11 @@ tmp/
 .DS_Store
 Thumbs.db
 
+# Mac Metadata Files
+._*
+.AppleDouble
+.LSOverride
+
 # Environment Variables
 .env.local
 .env.production

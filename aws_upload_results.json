@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-16T17:20:50.382619",
+  "archive_name": "saafe_codebase_20250816_172004.zip",
+  "archive_size_mb": 0.16016197204589844,
+  "results": {
+    "s3": "s3://saafe-codebase-20250816/codebase/saafe_codebase_20250816_172004.zip",
+    "codecommit": null
+  }
+}

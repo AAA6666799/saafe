@@ -1,0 +1,25 @@
+{
+  "dataset": {
+    "s3_bucket": "processedd-synthetic-data",
+    "s3_prefix": "cleaned-data/",
+    "total_size_gb": 3.257,
+    "total_files": 5,
+    "estimated_samples": 19902773
+  },
+  "training": {
+    "recommended_approach": "Production Ensemble (Local)",
+    "script_to_use": "production_fire_ai_complete.py",
+    "batch_size": 10000,
+    "epochs": 100,
+    "validation_split": 0.1,
+    "save_checkpoints": true
+  },
+  "aws": {
+    "region": "us-east-1",
+    "instance_type": "ml.p3.2xlarge",
+    "max_runtime_hours": 8
+  },
+  "estimated_cost": "$100-300",
+  "estimated_time": "4-8 hours",
+  "generated_at": "2025-08-18T14:56:56.281387"
+}

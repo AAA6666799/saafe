@@ -1,0 +1,102 @@
+# Development environment configuration for the synthetic fire prediction system
+
+# System configuration
+system:
+  log_level: "DEBUG"
+  data_dir: "data/dev"
+  models_dir: "models/dev"
+
+# Hardware configuration
+hardware:
+  # Use mock sensors with more noise for development
+  thermal_sensors:
+    thermal_sensor_1:
+      noise_level: 2.0  # Higher noise for testing robustness
+  
+  gas_sensors:
+    gas_sensor_1:
+      # Lower thresholds for easier testing of alerts
+      methane_threshold: 50.0
+      propane_threshold: 50.0
+      hydrogen_threshold: 50.0
+  
+  environmental_sensors:
+    env_sensor_1:
+      # More variation for testing
+      base_temperature: 22.0
+
+# Data generation configuration
+data_generation:
+  # Smaller datasets for faster development cycles
+  scenarios:
+    normal_duration: 600  # 10 minutes instead of 1 hour
+    fire_duration: 300    # 5 minutes instead of 10 minutes
+
+# Feature engineering configuration
+feature_engineering:
+  # Enable all features for development and testing
+  thermal:
+    debug_visualization: true
+  
+  gas:
+    debug_visualization: true
+  
+  environmental:
+    debug_visualization: true
+
+# Model configuration
+models:
+  baseline:
+    # Simpler models for faster training
+    n_estimators: 50
+    max_depth: 5
+  
+  temporal:
+    # Smaller network for faster training
+    hidden_size: 32
+    num_layers: 1
+    sequence_length: 15
+
+# Agent configuration
+agents:
+  # More verbose for development
+  monitoring:
+    debug_mode: true
+  
+  analysis:
+    debug_mode: true
+  
+  response:
+    debug_mode: true
+    # Lower thresholds for easier testing
+    alert_thresholds: [0.1, 0.3, 0.5, 0.7]
+  
+  learning:
+    debug_mode: true
+    # More frequent retraining for development
+    retraining_interval: 3600  # 1 hour instead of 24 hours
+
+# AWS configuration
+aws:
+  # Use localstack for local AWS service emulation
+  endpoint_url: "http://localhost:4566"
+  
+  s3:
+    default_bucket: "dev-synthetic-fire-prediction-data"
+    model_bucket: "dev-synthetic-fire-prediction-models"
+  
+  sagemaker:
+    # Use local mode for development
+    use_local_mode: true
+  
+  lambda:
+    alert_function: "dev-synthetic-fire-prediction-alert"
+  
+  cloudwatch:
+    log_group: "dev-synthetic-fire-prediction-logs"
+    metrics_namespace: "DevSyntheticFirePrediction"
+
+# Secrets configuration
+secrets:
+  use_aws_secrets_manager: false
+  secrets_file: "config/secrets/dev_secrets.json"

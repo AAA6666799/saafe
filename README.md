@@ -1,340 +1,139 @@
-# Saafe AI Fire Detection System - Enterprise MVP
+# Synthetic Fire Prediction System
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/AAA6666799/saafe)
-[![Security Scan](https://img.shields.io/badge/security-verified-green)](https://github.com/AAA6666799/saafe)
-[![Code Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)](https://github.com/AAA6666799/saafe)
-[![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)](https://python.org)
+A comprehensive AI-powered fire detection platform that uses synthetic data generation to develop, train, and validate the complete system before hardware deployment.
 
-## Executive Summary
+## Overview
 
-Saafe is an enterprise-grade AI-powered fire detection and prevention system designed for mission-critical environments. This MVP demonstrates production-ready architecture with real-time monitoring, intelligent alerting, and comprehensive safety protocols.
+The Synthetic Fire Prediction System follows a modular, agent-based approach with clear separation between data generation, feature processing, model inference, and response coordination. The system operates in two phases:
 
-## 🏗️ Architecture Overview
+1. **Synthetic Development Phase**: Using generated data for system development and validation
+2. **Hardware Integration Phase**: Seamless transition to real sensors
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Saafe Fire Detection System                  │
-├─────────────────────────────────────────────────────────────────┤
-│  🖥️  Presentation Layer                                         │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │   Web Dashboard │  │   Mobile App    │  │   API Gateway   │ │
-│  │   (Streamlit)   │  │   (Future)      │  │   (Future)      │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-├─────────────────────────────────────────────────────────────────┤
-│  ⚙️  Application Layer                                          │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │  Alert Engine   │  │ Scenario Manager│  │ Export Service  │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-├─────────────────────────────────────────────────────────────────┤
-│  🧠 AI/ML Layer                                                 │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │ Transformer     │  │ Anti-           │  │ Model           │ │
-│  │ Model           │  │ Hallucination   │  │ Management      │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-├─────────────────────────────────────────────────────────────────┤
-│  💾 Data Layer                                                  │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │ Configuration   │  │ Model Storage   │  │ Logs & Metrics  │ │
-│  │ (JSON)          │  │ (PKL/PTH)       │  │ (Structured)    │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
+## Features
 
-## 📁 Project Structure
+- **Synthetic Data Generation**: Realistic thermal, gas, and environmental sensor data
+- **Feature Engineering**: 18+ meaningful features from multi-sensor data
+- **Advanced ML Models**: Temporal models, baseline models, and ensemble systems
+- **Multi-Agent System**: Specialized agents for monitoring, analysis, response, and learning
+- **Hardware Abstraction**: Seamless transition from synthetic to real hardware
+- **Comprehensive Testing**: Automated testing with synthetic data validation
+
+## Project Structure
 
 ```
-saafe/
-├── 📋 PROJECT_OVERVIEW.md          # Executive summary and roadmap
-├── 🏗️ ARCHITECTURE.md              # Technical architecture documentation
-├── 🚀 DEPLOYMENT_GUIDE.md          # Enterprise deployment procedures
-├── 🔒 SECURITY.md                  # Security framework and controls
-├── 📖 README.md                    # This file
-├── 📄 LICENSE                      # MIT License
-├── 🐳 Dockerfile                   # Container configuration
-├── 🐳 docker-compose.yml           # Multi-service orchestration
-├── ⚙️ requirements.txt             # Python dependencies
-├── 🎯 main.py                      # Application entry point
-├── 🌐 app.py                       # Streamlit web interface
-│
-├── 📦 saafe_mvp/                   # Core application package
-│   ├── 🎨 ui/                      # User interface components
-│   │   ├── dashboard.py            # Main dashboard orchestration
-│   │   ├── sensor_components.py    # Real-time sensor visualization
-│   │   ├── alert_components.py     # Alert management interface
-│   │   ├── ai_analysis_components.py # AI insights display
-│   │   ├── settings_components.py  # Configuration interface
-│   │   └── export_components.py    # Data export functionality
-│   │
-│   ├── 🔥 core/                    # Core business logic
-│   │   ├── fire_detection_pipeline.py # Main detection engine
-│   │   ├── data_stream.py          # Real-time data processing
-│   │   ├── alert_engine.py         # Intelligent alerting system
-│   │   ├── scenario_manager.py     # Risk scenario management
-│   │   └── data_models.py          # Data structure definitions
-│   │
-│   ├── 🧠 models/                  # AI/ML components
-│   │   ├── transformer.py          # Deep learning fire detection
-│   │   ├── anti_hallucination.py   # False positive prevention
-│   │   ├── model_manager.py        # Model lifecycle management
-│   │   └── model_loader.py         # Model loading utilities
-│   │
-│   ├── 📡 services/                # External service integrations
-│   │   ├── notification_manager.py # Multi-channel notifications
-│   │   ├── email_service.py        # Email delivery (SendGrid)
-│   │   ├── sms_service.py          # SMS notifications (Twilio)
-│   │   ├── push_notification_service.py # Push notifications
-│   │   ├── export_service.py       # Report generation
-│   │   └── performance_monitor.py  # System health monitoring
-│   │
-│   └── 🛠️ utils/                   # Utilities and helpers
-│       ├── error_handler.py        # Comprehensive error management
-│       ├── fallback_manager.py     # System resilience
-│       └── __init__.py             # Package initialization
-│
-├── 🗂️ config/                      # Configuration management
-│   ├── app_config.json             # Application configuration
-│   └── user_config.json            # User preferences
-│
-├── 🤖 models/                      # Trained AI models
-│   ├── transformer_model.pth       # PyTorch transformer model
-│   ├── anti_hallucination.pkl      # Scikit-learn classifier
-│   └── model_metadata.json         # Model versioning info
-│
-├── 📚 docs/                        # Documentation
-│   ├── USER_MANUAL.md              # End-user documentation
-│   ├── TECHNICAL_DOCUMENTATION.md # Technical specifications
-│   ├── TROUBLESHOOTING_GUIDE.md   # Issue resolution guide
-│   └── DEMO_SCRIPT.md              # Demonstration procedures
-│
-├── ☁️ infrastructure/              # Infrastructure as Code
-│   ├── terraform/                  # Terraform configurations
-│   ├── cloudformation/             # AWS CloudFormation templates
-│   └── kubernetes/                 # Kubernetes manifests
-│
-├── 🔧 scripts/                     # Automation scripts
-│   ├── deploy.sh                   # Deployment automation
-│   ├── backup.sh                   # Backup procedures
-│   ├── health-check.sh             # Health validation
-│   └── security-scan.sh            # Security scanning
-│
-├── 🧪 tests/                       # Test suite
-│   ├── unit/                       # Unit tests
-│   ├── integration/                # Integration tests
-│   ├── security/                   # Security tests
-│   └── performance/                # Performance tests
-│
-└── 📊 monitoring/                  # Observability configuration
-    ├── prometheus.yml              # Metrics collection
-    ├── grafana/                    # Dashboard configurations
-    └── alerts/                     # Alert rules
+synthetic_fire_system/
+├── core/                   # Core interfaces and configuration
+├── synthetic_data/         # Data generation components
+├── feature_engineering/    # Feature extraction and fusion
+├── models/                # ML models and ensemble systems
+├── agents/                # Multi-agent system components
+├── hardware/              # Hardware abstraction layer
+├── system/                # System management components
+└── __init__.py
+
+tests/
+├── unit/                  # Unit tests
+├── integration/           # Integration tests
+└── performance/           # Performance tests
+
+config/                    # Configuration files
 ```
 
-## 🚀 Quick Start
-
-### Prerequisites
-- **Python 3.9+** (Recommended: 3.11)
-- **Docker 20.10+** with Docker Compose
-- **8GB RAM minimum** (16GB recommended)
-- **AWS CLI 2.0+** (for cloud deployment)
-
-### Local Development Setup
+## Installation
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/AAA6666799/saafe.git
-cd saafe
+# Clone the repository
+git clone https://github.com/firesafety/synthetic-fire-prediction-system.git
+cd synthetic-fire-prediction-system
 
-# 2. Create and activate virtual environment
-python3 -m venv saafe_env
-source saafe_env/bin/activate  # Linux/macOS
-# saafe_env\Scripts\activate   # Windows
-
-# 3. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# 4. Configure the application
-cp config/app_config.json.example config/app_config.json
-cp config/user_config.json.example config/user_config.json
-
-# 5. Initialize the application
-python main.py --setup
-
-# 6. Start the application
-streamlit run app.py
+# Install the package
+pip install -e .
 ```
 
-### Docker Deployment
+## Quick Start
+
+```python
+from synthetic_fire_system.core.config import config_manager
+from synthetic_fire_system.system.manager import SystemManager
+
+# Initialize system with default configuration
+system = SystemManager(config_manager)
+
+# Start the system
+system.start()
+
+# The system will begin generating synthetic data and training models
+```
+
+## Configuration
+
+The system uses a comprehensive configuration management system. Configuration files are located in the `config/` directory:
+
+- `system.json`: Main system configuration
+- `synthetic_data.json`: Synthetic data generation settings
+- `model.json`: Machine learning model configuration
+- `agent.json`: Multi-agent system settings
+
+## Development
+
+### Running Tests
 
 ```bash
-# Development environment
-docker-compose up -d
+# Run all tests
+pytest
 
-# Production environment
-docker-compose -f docker-compose.prod.yml up -d
+# Run with coverage
+pytest --cov=synthetic_fire_system
 
-# Access the application
-open http://localhost:8501
+# Run specific test categories
+pytest tests/unit/
+pytest tests/integration/
+pytest tests/performance/
 ```
 
-### Cloud Deployment (AWS)
+### Code Quality
 
 ```bash
-# Set up AWS credentials
-aws configure
+# Format code
+black synthetic_fire_system/
 
-# Deploy infrastructure
-cd infrastructure/terraform
-terraform init && terraform apply
+# Lint code
+flake8 synthetic_fire_system/
 
-# Deploy application
-./scripts/deploy.sh production
-
-# Verify deployment
-./scripts/health-check.sh
+# Type checking
+mypy synthetic_fire_system/
 ```
 
-## 🔥 Core Features
+## Requirements
 
-### 🎯 Fire Detection Engine
-- **Real-time Processing**: Sub-second detection response
-- **Multi-sensor Fusion**: Temperature, humidity, smoke, visual
-- **AI-powered Analysis**: Deep learning transformer models
-- **False Positive Prevention**: Proprietary anti-hallucination technology
+- Python 3.8+
+- PyTorch 1.9+
+- NumPy, SciPy, Pandas
+- Scikit-learn, XGBoost
+- OpenCV, Matplotlib
+- FastAPI, Uvicorn
+- MLflow, DVC
 
-### 📊 Intelligent Dashboard
-- **Real-time Monitoring**: Live sensor data visualization
-- **Risk Assessment**: Dynamic threat level indicators
-- **Alert Management**: Centralized notification control
-- **Performance Metrics**: System health and efficiency tracking
+## License
 
-### 📱 Multi-channel Notifications
-- **SMS Alerts**: Twilio integration for instant messaging
-- **Email Notifications**: SendGrid for detailed reports
-- **Push Notifications**: Real-time mobile alerts
-- **Webhook Integration**: Custom notification endpoints
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-### 📈 Advanced Analytics
-- **Predictive Modeling**: Fire risk forecasting
-- **Historical Analysis**: Trend identification and reporting
-- **Export Capabilities**: PDF, CSV, and custom formats
-- **Compliance Reporting**: Regulatory requirement support
+## Contributing
 
-## 🛡️ Security Framework
+Please read CONTRIBUTING.md for details on our code of conduct and the process for submitting pull requests.
 
-### Enterprise Security Controls
-- **🔐 Multi-factor Authentication**: TOTP, SMS, Hardware tokens
-- **🔒 End-to-end Encryption**: AES-256 at rest, TLS 1.3 in transit
-- **👥 Role-based Access Control**: Granular permission management
-- **📋 Audit Logging**: Comprehensive activity tracking
-- **🛡️ Intrusion Detection**: Real-time threat monitoring
-- **🔍 Vulnerability Scanning**: Automated security assessments
+## Documentation
 
-### Compliance Standards
-- **ISO 27001**: Information security management
-- **SOC 2**: Security and availability controls
-- **GDPR**: Data privacy and protection
-- **NIST**: Cybersecurity framework alignment
+Comprehensive documentation is available in the `docs/` directory and can be built using Sphinx:
 
-## 🏗️ Technology Stack
-
-### Backend Technologies
-- **Python 3.9+**: Core application language
-- **PyTorch**: Deep learning framework
-- **Streamlit**: Web interface framework
-- **FastAPI**: REST API framework (future)
-- **Pandas/NumPy**: Data processing and analysis
-
-### AI/ML Technologies
-- **Transformer Models**: State-of-the-art fire detection
-- **Scikit-learn**: Classical machine learning
-- **Custom Anti-hallucination**: Proprietary false positive prevention
-- **Model Versioning**: MLflow integration
-
-### Infrastructure Technologies
-- **Docker**: Containerization and orchestration
-- **Kubernetes**: Container orchestration (production)
-- **Terraform**: Infrastructure as Code
-- **AWS Services**: Cloud infrastructure
-- **Prometheus/Grafana**: Monitoring and observability
-
-## 📊 Performance Metrics
-
-### System Performance
-- **Detection Latency**: < 500ms average response time
-- **Throughput**: 10,000+ sensor readings per second
-- **Availability**: 99.9% uptime SLA
-- **Accuracy**: 98.5% fire detection accuracy
-- **False Positive Rate**: < 0.1%
-
-### Scalability Metrics
-- **Horizontal Scaling**: Auto-scaling based on load
-- **Database Performance**: Optimized for high-frequency writes
-- **Cache Hit Rate**: 95%+ for frequently accessed data
-- **Resource Utilization**: Optimized CPU and memory usage
-
-## 🔧 Development Workflow
-
-### Code Quality Standards
 ```bash
-# Run comprehensive test suite
-pytest tests/ -v --cov=saafe_mvp --cov-report=html
-
-# Code formatting and linting
-black saafe_mvp/ tests/
-flake8 saafe_mvp/ tests/
-mypy saafe_mvp/
-
-# Security scanning
-bandit -r saafe_mvp/
-safety check
-
-# Performance profiling
-python -m cProfile -o profile.stats main.py
+cd docs/
+make html
 ```
 
-### CI/CD Pipeline
-- **Automated Testing**: Unit, integration, and security tests
-- **Code Quality Gates**: Coverage, linting, and security checks
-- **Container Security**: Vulnerability scanning and compliance
-- **Blue-Green Deployment**: Zero-downtime production updates
-- **Rollback Procedures**: Automated failure recovery
+## Support
 
-## 📖 Documentation
-
-### Technical Documentation
-- **[Architecture Guide](ARCHITECTURE.md)**: Detailed system architecture
-- **[Deployment Guide](DEPLOYMENT_GUIDE.md)**: Production deployment procedures
-- **[Security Framework](SECURITY.md)**: Security controls and compliance
-- **[API Documentation](docs/API.md)**: REST API specifications
-- **[User Manual](docs/USER_MANUAL.md)**: End-user documentation
-
-### Operational Documentation
-- **[Troubleshooting Guide](docs/TROUBLESHOOTING_GUIDE.md)**: Issue resolution
-- **[Monitoring Guide](docs/MONITORING.md)**: Observability setup
-- **[Backup Procedures](docs/BACKUP.md)**: Data protection strategies
-- **[Disaster Recovery](docs/DISASTER_RECOVERY.md)**: Business continuity
-
-### Development Setup
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass
-6. Submit a pull request
-
-## 🆘 Support
-
-### Community Support
-- **GitHub Issues**: Bug reports and feature requests
-- **Discussions**: Community Q&A and ideas
-- **Wiki**: Additional documentation and tutorials
-
-### Enterprise Support
-- **Professional Services**: Implementation and customization
-- **Training Programs**: Technical and operational training
-- **24/7 Support**: Mission-critical support packages
-
-**🏢 Enterprise Ready** | **🔒 Security First** | **📈 Production Proven** | **🌍 Globally Scalable**
-
----
-*Built with ❤️ by Ajay Kumar*
+For support and questions, please open an issue on GitHub or contact the development team.

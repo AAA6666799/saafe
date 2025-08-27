@@ -1,0 +1,46 @@
+{
+    "TrainingJobName": "saafe-iot-fixed-training",
+    "RoleArn": "arn:aws:iam::691595239825:role/SaafeIoTTrainingRole",
+    "AlgorithmSpecification": {
+        "TrainingImage": "763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-training:1.13.1-gpu-py39-cu117-ubuntu20.04-sagemaker",
+        "TrainingInputMode": "File"
+    },
+    "InputDataConfig": [
+        {
+            "ChannelName": "code",
+            "DataSource": {
+                "S3DataSource": {
+                    "S3DataType": "S3Prefix",
+                    "S3Uri": "s3://saafe-iot-training-691595239825-us-east-1/code/",
+                    "S3DataDistributionType": "FullyReplicated"
+                }
+            },
+            "ContentType": "application/x-python",
+            "CompressionType": "None"
+        }
+    ],
+    "OutputDataConfig": {
+        "S3OutputPath": "s3://saafe-iot-training-691595239825-us-east-1/output/"
+    },
+    "ResourceConfig": {
+        "InstanceType": "ml.p3.2xlarge",
+        "InstanceCount": 1,
+        "VolumeSizeInGB": 30
+    },
+    "StoppingCondition": {
+        "MaxRuntimeInSeconds": 3600
+    },
+    "HyperParameters": {
+        "sagemaker_program": "sagemaker_iot_train.py",
+        "sagemaker_submit_directory": "s3://saafe-iot-training-691595239825-us-east-1/code/",
+        "epochs": "50",
+        "batch-size": "128",
+        "learning-rate": "0.001"
+    },
+    "Tags": [
+        {
+            "Key": "Project",
+            "Value": "SaafeIoT"
+        }
+    ]
+}

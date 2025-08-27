@@ -1,6 +1,8 @@
 # Saafe MVP - CodeArtifact Requirements
 # Generated for AWS CodeArtifact repository: saafe
 
+# Saafe MVP - Python Dependencies
+
 # Core ML/AI
 torch>=2.0.0
 numpy>=1.21.0
@@ -32,6 +34,9 @@ pytest>=7.0.0
 pytest-cov>=4.0.0
 black>=22.0.0
 flake8>=5.0.0
+
+# Optional Dependencies
+# uvx  # For MCP servers (install separately)
 
 # AWS-specific packages
 boto3>=1.26.0
