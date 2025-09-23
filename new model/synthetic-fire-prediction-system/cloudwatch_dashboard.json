@@ -1,0 +1,95 @@
+{
+    "widgets": [
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ "AWS/Lambda", "Invocations", "FunctionName", "saafe-monitoring-agent" ],
+                    [ "AWS/Lambda", "Invocations", "FunctionName", "saafe-analysis-agent" ],
+                    [ "AWS/Lambda", "Invocations", "FunctionName", "saafe-response-agent" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "Lambda Function Invocations",
+                "period": 300,
+                "stat": "Sum"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 0,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ "AWS/Lambda", "Duration", "FunctionName", "saafe-monitoring-agent" ],
+                    [ "AWS/Lambda", "Duration", "FunctionName", "saafe-analysis-agent" ],
+                    [ "AWS/Lambda", "Duration", "FunctionName", "saafe-response-agent" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "Lambda Function Duration",
+                "period": 300,
+                "stat": "Average"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ "AWS/Lambda", "Errors", "FunctionName", "saafe-monitoring-agent" ],
+                    [ "AWS/Lambda", "Errors", "FunctionName", "saafe-analysis-agent" ],
+                    [ "AWS/Lambda", "Errors", "FunctionName", "saafe-response-agent" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "Lambda Function Errors",
+                "period": 300,
+                "stat": "Sum"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 12,
+            "y": 6,
+            "width": 12,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [ "AWS/SageMaker", "ModelLatency", "EndpointName", "fire-mvp-xgb-endpoint" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "SageMaker Model Latency",
+                "period": 300,
+                "stat": "Average"
+            }
+        },
+        {
+            "type": "log",
+            "x": 0,
+            "y": 12,
+            "width": 24,
+            "height": 6,
+            "properties": {
+                "query": "SOURCE '/aws/lambda/saafe-monitoring-agent' | fields @timestamp, @message | sort @timestamp desc | limit 20",
+                "region": "us-east-1",
+                "title": "Monitoring Agent Logs",
+                "view": "table"
+            }
+        }
+    ]
+}

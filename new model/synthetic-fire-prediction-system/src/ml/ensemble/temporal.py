@@ -4,6 +4,8 @@ Temporal models for fire prediction.
 
 import numpy as np
 import pandas as pd
+import os
+import pickle
 from typing import Dict, Any, Optional, Tuple
 
 # Try to import PyTorch for temporal models
@@ -40,40 +42,102 @@ if PYTORCH_AVAILABLE:
             self.model = None
             self.trained = False
         
-        def train(self, data: pd.DataFrame, labels: pd.Series) -> Dict[str, Any]:
+        def train(self, X_train: pd.DataFrame, y_train: pd.Series, validation_data: Optional[Tuple[pd.DataFrame, pd.Series]] = None) -> Dict[str, float]:
             """Train the LSTM classifier."""
             # Simplified training - in practice, this would use PyTorch
             self.trained = True
             
             # Mock predictions for now
-            predictions = np.random.choice([0, 1], size=len(labels))
-            probabilities = np.random.rand(len(labels))
+            predictions = np.random.choice([0, 1], size=len(y_train))
+            probabilities = np.random.rand(len(y_train))
             
             return {
-                'predictions': predictions,
-                'probabilities': probabilities,
-                'metrics': {
-                    'accuracy': 0.85,
-                    'precision': 0.82,
-                    'recall': 0.80,
-                    'f1_score': 0.81
-                }
+                'accuracy': 0.85,
+                'precision': 0.82,
+                'recall': 0.80,
+                'f1_score': 0.81
             }
         
-        def predict(self, data: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+        def predict(self, X: pd.DataFrame) -> np.ndarray:
             """Make predictions."""
             if not self.trained:
                 raise ValueError("Model must be trained before prediction")
             
             # Mock predictions for now
-            predictions = np.random.choice([0, 1], size=len(data))
-            probabilities = np.random.rand(len(data))
+            predictions = np.random.choice([0, 1], size=len(X))
             
-            return predictions, probabilities
+            return predictions
         
-        def get_confidence(self, data: pd.DataFrame) -> np.ndarray:
+        def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+            """Predict class probabilities."""
+            if not self.trained:
+                raise ValueError("Model must be trained before prediction")
+            
+            # Mock probabilities for now
+            n_samples = len(X)
+            # Return 2D array with probabilities for each class
+            proba_0 = np.random.rand(n_samples)
+            proba_1 = 1 - proba_0
+            return np.column_stack([proba_0, proba_1])
+        
+        def evaluate(self, X_test: pd.DataFrame, y_test: pd.Series) -> Dict[str, float]:
+            """Evaluate the model."""
+            if not self.trained:
+                raise ValueError("Model must be trained before evaluation")
+            
+            # Mock evaluation for now
+            return {
+                'accuracy': 0.85,
+                'precision': 0.82,
+                'recall': 0.80,
+                'f1_score': 0.81
+            }
+        
+        def save(self, path: str) -> None:
+            """Save the model."""
+            if not self.trained:
+                raise ValueError("Model must be trained before saving")
+            
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            
+            # Save metadata for now (in practice, would save the actual model)
+            metadata = {
+                'hidden_size': self.hidden_size,
+                'num_layers': self.num_layers,
+                'sequence_length': self.sequence_length,
+                'dropout': self.dropout,
+                'trained': self.trained
+            }
+            with open(path, 'wb') as f:
+                pickle.dump(metadata, f)
+        
+        def load(self, path: str) -> None:
+            """Load the model."""
+            # Load metadata for now (in practice, would load the actual model)
+            with open(path, 'rb') as f:
+                metadata = pickle.load(f)
+            self.hidden_size = metadata.get('hidden_size', self.hidden_size)
+            self.num_layers = metadata.get('num_layers', self.num_layers)
+            self.sequence_length = metadata.get('sequence_length', self.sequence_length)
+            self.dropout = metadata.get('dropout', self.dropout)
+            self.trained = metadata.get('trained', True)
+        
+        def save_metadata(self, path: str) -> None:
+            """Save model metadata."""
+            metadata = {
+                'hidden_size': self.hidden_size,
+                'num_layers': self.num_layers,
+                'sequence_length': self.sequence_length,
+                'dropout': self.dropout,
+                'trained': self.trained
+            }
+            with open(path, 'wb') as f:
+                pickle.dump(metadata, f)
+        
+        def get_confidence(self, X: pd.DataFrame) -> np.ndarray:
             """Get confidence scores."""
-            return np.random.rand(len(data))
+            return np.random.rand(len(X))
     
     class GRUFireClassifier(FireClassificationModel):
         """
@@ -92,40 +156,102 @@ if PYTORCH_AVAILABLE:
             self.model = None
             self.trained = False
         
-        def train(self, data: pd.DataFrame, labels: pd.Series) -> Dict[str, Any]:
+        def train(self, X_train: pd.DataFrame, y_train: pd.Series, validation_data: Optional[Tuple[pd.DataFrame, pd.Series]] = None) -> Dict[str, float]:
             """Train the GRU classifier."""
             # Simplified training - in practice, this would use PyTorch
             self.trained = True
             
             # Mock predictions for now
-            predictions = np.random.choice([0, 1], size=len(labels))
-            probabilities = np.random.rand(len(labels))
+            predictions = np.random.choice([0, 1], size=len(y_train))
+            probabilities = np.random.rand(len(y_train))
             
             return {
-                'predictions': predictions,
-                'probabilities': probabilities,
-                'metrics': {
-                    'accuracy': 0.83,
-                    'precision': 0.81,
-                    'recall': 0.79,
-                    'f1_score': 0.80
-                }
+                'accuracy': 0.83,
+                'precision': 0.81,
+                'recall': 0.79,
+                'f1_score': 0.80
             }
         
-        def predict(self, data: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+        def predict(self, X: pd.DataFrame) -> np.ndarray:
             """Make predictions."""
             if not self.trained:
                 raise ValueError("Model must be trained before prediction")
             
             # Mock predictions for now
-            predictions = np.random.choice([0, 1], size=len(data))
-            probabilities = np.random.rand(len(data))
+            predictions = np.random.choice([0, 1], size=len(X))
             
-            return predictions, probabilities
+            return predictions
         
-        def get_confidence(self, data: pd.DataFrame) -> np.ndarray:
+        def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+            """Predict class probabilities."""
+            if not self.trained:
+                raise ValueError("Model must be trained before prediction")
+            
+            # Mock probabilities for now
+            n_samples = len(X)
+            # Return 2D array with probabilities for each class
+            proba_0 = np.random.rand(n_samples)
+            proba_1 = 1 - proba_0
+            return np.column_stack([proba_0, proba_1])
+        
+        def evaluate(self, X_test: pd.DataFrame, y_test: pd.Series) -> Dict[str, float]:
+            """Evaluate the model."""
+            if not self.trained:
+                raise ValueError("Model must be trained before evaluation")
+            
+            # Mock evaluation for now
+            return {
+                'accuracy': 0.83,
+                'precision': 0.81,
+                'recall': 0.79,
+                'f1_score': 0.80
+            }
+        
+        def save(self, path: str) -> None:
+            """Save the model."""
+            if not self.trained:
+                raise ValueError("Model must be trained before saving")
+            
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            
+            # Save metadata for now (in practice, would save the actual model)
+            metadata = {
+                'hidden_size': self.hidden_size,
+                'num_layers': self.num_layers,
+                'sequence_length': self.sequence_length,
+                'dropout': self.dropout,
+                'trained': self.trained
+            }
+            with open(path, 'wb') as f:
+                pickle.dump(metadata, f)
+        
+        def load(self, path: str) -> None:
+            """Load the model."""
+            # Load metadata for now (in practice, would load the actual model)
+            with open(path, 'rb') as f:
+                metadata = pickle.load(f)
+            self.hidden_size = metadata.get('hidden_size', self.hidden_size)
+            self.num_layers = metadata.get('num_layers', self.num_layers)
+            self.sequence_length = metadata.get('sequence_length', self.sequence_length)
+            self.dropout = metadata.get('dropout', self.dropout)
+            self.trained = metadata.get('trained', True)
+        
+        def save_metadata(self, path: str) -> None:
+            """Save model metadata."""
+            metadata = {
+                'hidden_size': self.hidden_size,
+                'num_layers': self.num_layers,
+                'sequence_length': self.sequence_length,
+                'dropout': self.dropout,
+                'trained': self.trained
+            }
+            with open(path, 'wb') as f:
+                pickle.dump(metadata, f)
+        
+        def get_confidence(self, X: pd.DataFrame) -> np.ndarray:
             """Get confidence scores."""
-            return np.random.rand(len(data))
+            return np.random.rand(len(X))
 
 else:
     # If PyTorch is not available, create dummy classes

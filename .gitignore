@@ -88,3 +88,17 @@ coverage.xml
 .mypy_cache/
 .dmypy.json
 dmypy.json
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+# Large files
+*.zip
+*.tar.gz
+*.gz
+*.7z
+*.rar
+
+# Node modules
+node_modules/

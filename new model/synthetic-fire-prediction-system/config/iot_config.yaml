@@ -1,0 +1,156 @@
+# IoT configuration for FLIR Lepton 3.5 + SCD41 CO₂ sensors
+
+# System configuration
+system:
+  name: "FLIR SCD41 Fire Detection System"
+  version: "0.2.0"
+  log_level: "INFO"
+  data_dir: "iot_data"
+  models_dir: "models"
+
+# Hardware configuration for IoT devices
+hardware:
+  mode: "real"  # real, synthetic, or hybrid
+  auto_fallback: true
+  
+  # FLIR Lepton 3.5 thermal camera configuration
+  flir_sensors:
+    flir_lepton_01:
+      device_path: "/dev/thermal0"
+      resolution: [160, 120]  # FLIR Lepton 3.5 resolution
+      temperature_range: [-10.0, 150.0]  # Celsius
+      frame_rate: 9.0  # Hz
+      sensor_type: "flir_lepton_3_5"
+  
+  # SCD41 CO₂ sensor configuration
+  scd41_sensors:
+    scd41_01:
+      device_address: "/dev/ttyUSB0"
+      measurement_range: [400, 40000]  # ppm
+      sampling_rate: 0.2  # Every 5 seconds
+      sensor_type: "sensirion_scd41"
+
+# Feature engineering configuration for IoT devices
+feature_engineering:
+  # FLIR Lepton 3.5 thermal features (15 features)
+  thermal:
+    features:
+      - t_mean        # Mean temperature
+      - t_std         # Temperature standard deviation
+      - t_max         # Maximum temperature
+      - t_p95         # 95th percentile temperature
+      - t_hot_area_pct  # Percentage of hot area
+      - t_hot_largest_blob_pct  # Largest hot blob percentage
+      - t_grad_mean   # Mean temperature gradient
+      - t_grad_std    # Standard deviation of temperature gradient
+      - t_diff_mean   # Mean temperature difference between frames
+      - t_diff_std    # Standard deviation of temperature difference
+      - flow_mag_mean # Mean optical flow magnitude
+      - flow_mag_std  # Standard deviation of optical flow magnitude
+      - tproxy_val    # Temperature proxy value
+      - tproxy_delta  # Temperature proxy delta
+      - tproxy_vel    # Temperature proxy velocity
+  
+  # SCD41 CO₂ gas features (3 features)
+  gas:
+    features:
+      - gas_val       # Current CO₂ concentration (ppm)
+      - gas_delta     # Change from previous reading
+      - gas_vel       # Rate of change (same as delta)
+  
+  # Feature fusion configuration
+  fusion:
+    enabled: true
+    method: "concatenation"
+    feature_count: 18  # 15 thermal + 3 gas
+
+# Model configuration for IoT devices
+models:
+  input_features: 18  # 15 thermal + 3 gas features
+  thermal_feature_count: 15
+  gas_feature_count: 3
+  
+  baseline:
+    type: "random_forest"
+    n_estimators: 100
+    max_depth: 10
+    random_state: 42
+  
+  temporal:
+    type: "lstm"
+    hidden_size: 64
+    num_layers: 2
+    dropout: 0.2
+    sequence_length: 30
+  
+  ensemble:
+    models: ["baseline", "temporal"]
+    weights: [0.6, 0.4]  # Weight thermal more heavily
+    voting: "soft"
+
+# Agent configuration for IoT devices
+agents:
+  monitoring:
+    update_interval: 1.0  # seconds
+    anomaly_threshold: 0.7
+    health_check_interval: 30  # seconds
+  
+  analysis:
+    confidence_threshold: 0.7
+    thermal_thresholds:
+      t_max: 60.0      # °C
+      t_hot_area_pct: 10.0  # %
+      tproxy_vel: 2.0   # Rate of change
+    gas_thresholds:
+      gas_val: 1000.0   # ppm CO₂
+      gas_delta: 50.0   # ppm change
+      gas_vel: 50.0     # Rate of change
+    fire_pattern:
+      enable_correlation_analysis: true
+      enable_trend_analysis: true
+  
+  response:
+    risk_levels: 5
+    alert_thresholds: [0.3, 0.5, 0.7, 0.85]
+    escalation_intervals: [30, 60, 120]  # seconds
+  
+  learning:
+    performance_metrics: ["accuracy", "precision", "recall", "f1"]
+    retraining_interval: 86400  # seconds (24 hours)
+
+# MQTT configuration for IoT communication
+mqtt:
+  enabled: true
+  broker: "localhost"
+  port: 1883
+  topics:
+    flir: "sensors/flir/+/data"
+    scd41: "sensors/scd41/+/data"
+    alerts: "alerts/fire"
+    health: "system/health"
+  qos: 1
+  keepalive: 60
+
+# AWS configuration for IoT
+aws:
+  region: "us-west-2"
+  profile: "default"
+  
+  s3:
+    default_bucket: "flir-scd41-fire-detection-data"
+    model_bucket: "flir-scd41-fire-detection-models"
+  
+  sagemaker:
+    role_arn: "arn:aws:iam::123456789012:role/SageMakerExecutionRole"
+    instance_type: "ml.m5.large"
+  
+  iot:
+    thing_name: "flir-scd41-fire-detector"
+    certificate_path: "certs/device.pem.crt"
+    private_key_path: "certs/private.pem.key"
+    ca_path: "certs/AmazonRootCA1.pem"
+
+# Secrets configuration
+secrets:
+  use_aws_secrets_manager: false
+  secrets_file: "config/secrets/iot_secrets.json"

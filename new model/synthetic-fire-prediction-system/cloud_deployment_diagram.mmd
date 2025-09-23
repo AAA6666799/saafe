@@ -1,0 +1,61 @@
+```mermaid
+graph TD
+    subgraph "AWS Cloud Infrastructure"
+        subgraph "Compute Layer"
+            Lambda[Lambda Functions]
+            SageMaker[SageMaker Endpoints]
+        end
+        
+        subgraph "Storage Layer"
+            S3_Buckets[S3 Buckets]
+            CW_Logs[CloudWatch Logs]
+        end
+        
+        subgraph "Event & Notification Layer"
+            CW_Events[CloudWatch Events]
+            SNS[SNS Topics]
+        end
+        
+        subgraph "Monitoring & Management"
+            CW_Dashboard[CloudWatch Dashboard]
+        end
+    end
+    
+    subgraph "Deployed Lambda Functions"
+        Monitoring[saafe-monitoring-agent]
+        Analysis[saafe-analysis-agent]
+        Response[saafe-response-agent]
+    end
+    
+    subgraph "Available S3 Buckets"
+        ProcessedData[processedd-synthetic-data]
+        SyntheticData[synthetic-data-4]
+    end
+    
+    subgraph "CloudWatch Components"
+        Schedule[saafe-monitoring-schedule]
+        LogGroups[Log Groups<br/>/aws/lambda/saafe-*]
+    end
+    
+    Lambda --> Monitoring
+    Lambda --> Analysis
+    Lambda --> Response
+    
+    S3_Buckets --> ProcessedData
+    S3_Buckets --> SyntheticData
+    
+    CW_Events --> Schedule
+    
+    CW_Logs --> LogGroups
+    
+    Schedule --> Monitoring
+    
+    classDef deployed fill:#4CAF50,stroke:#333,stroke-width:2px;
+    classDef available fill:#2196F3,stroke:#333,stroke-width:2px;
+    classDef undeployed fill:#FFC107,stroke:#333,stroke-width:2px;
+    classDef planned fill:#9E9E9E,stroke:#333,stroke-width:2px;
+    
+    class Monitoring,Analysis,Response,Schedule,LogGroups,ProcessedData,SyntheticData deployed;
+    class SageMaker,SNS,CW_Dashboard undeployed;
+    class Lambda,S3_Buckets,CW_Events,CW_Logs available;
+```

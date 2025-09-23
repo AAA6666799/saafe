@@ -1,3 +1,131 @@
+# Saafe Fire Detection System - Cloud Deployment Guide
+
+## Overview
+
+This guide explains how to deploy the Saafe Fire Detection System to run continuously in the cloud. The system can be deployed using several methods depending on your infrastructure preferences.
+
+## Prerequisites
+
+Before deploying, ensure you have:
+
+1. Python 3.9 or later installed
+2. Docker installed (for Docker deployments)
+3. Kubernetes CLI installed (for Kubernetes deployments)
+4. AWS CLI installed and configured (for AWS deployments)
+5. Appropriate permissions for your target deployment environment
+
+## Deployment Methods
+
+### 1. Docker Compose Deployment (Recommended for Testing)
+
+This is the simplest deployment method for testing and small-scale production use.
+
+```bash
+# Navigate to the project root
+cd /path/to/saafe-copy-3
+
+# Deploy using Docker Compose
+python3 deploy-system.py docker
+```
+
+This will start all system components:
+- Main fire detection service with Streamlit UI on port 8501
+- IoT agent for sensor data collection
+- Alert agent for notifications
+- Monitoring agent for system health
+
+Access the dashboard at: http://localhost:8501
+
+### 2. Kubernetes Deployment (Recommended for Production)
+
+For scalable cloud deployments:
+
+```bash
+# Deploy to Kubernetes
+python3 deploy-system.py kubernetes
+```
+
+This creates a dedicated namespace and deploys all components as separate pods.
+
+### 3. AWS Deployment
+
+For AWS deployments using ECS:
+
+```bash
+# Deploy to AWS
+python3 deploy-system.py aws
+```
+
+This script will:
+1. Create an ECR repository for Docker images
+2. Build and push the Docker image
+3. Create an ECS cluster and task definitions
+4. Provide instructions for creating the ECS service
+
+### 4. Systemd Service (Linux Servers)
+
+For traditional Linux server deployments:
+
+```bash
+# Deploy as systemd service
+sudo python3 deploy-system.py systemd
+```
+
+## Configuration
+
+All deployment methods use configuration files from the `config` directory:
+
+- `base_config.yaml` - Base system configuration
+- `iot_config.yaml` - IoT sensor configuration
+- `prod_config.yaml` - Production environment configuration
+
+Customize these files before deployment to match your specific requirements.
+
+## Monitoring and Maintenance
+
+The system includes built-in health checks and logging:
+
+- Docker: `docker logs saafe-fire-detection`
+- Kubernetes: `kubectl logs -n saafe-fire-detection <pod-name>`
+- Systemd: `journalctl -u saafe-fire-detection.service`
+
+## Scaling
+
+For high-availability deployments:
+
+- Kubernetes: `kubectl scale deployment saafe-fire-detection --replicas=3 -n saafe-fire-detection`
+
+Note that the IoT agent should typically run with a single replica to avoid conflicts with physical sensors.
+
+## Updating the System
+
+To update the system:
+
+1. Pull the latest code
+2. Rebuild Docker images if needed
+3. Redeploy using the same method
+
+For Kubernetes:
+```bash
+kubectl rollout restart deployment saafe-fire-detection -n saafe-fire-detection
+```
+
+## Troubleshooting
+
+Common issues and solutions:
+
+1. **Port conflicts**: Change the port mapping in docker-compose.yml
+2. **Permission errors**: Ensure proper file permissions and user privileges
+3. **AWS authentication**: Verify AWS credentials with `aws sts get-caller-identity`
+4. **Docker issues**: Ensure Docker daemon is running
+
+## Security Considerations
+
+- Use secrets management for sensitive configuration
+- Restrict network access to necessary ports only
+- Regularly update dependencies and base images
+- Implement proper authentication for the web interface in production
+
 # Saafe Fire Detection System - Enterprise Deployment Guide
 
 ## Overview
@@ -464,7 +592,7 @@ alerting:
 ```
 
 ### Grafana Dashboards
-```json
+``json
 {
   "dashboard": {
     "title": "Saafe Fire Detection System",

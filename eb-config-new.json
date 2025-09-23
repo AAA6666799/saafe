@@ -1,0 +1,28 @@
+{
+  "ApplicationName": "saafe-dashboard",
+  "EnvironmentName": "saafe-dashboard-env-1",
+  "VersionLabel": "v1",
+  "SolutionStackName": "64bit Amazon Linux 2023 v4.7.1 running Python 3.13",
+  "OptionSettings": [
+    {
+      "Namespace": "aws:elasticbeanstalk:environment",
+      "OptionName": "EnvironmentType",
+      "Value": "LoadBalanced"
+    },
+    {
+      "Namespace": "aws:autoscaling:asg",
+      "OptionName": "MinSize",
+      "Value": "1"
+    },
+    {
+      "Namespace": "aws:autoscaling:asg",
+      "OptionName": "MaxSize",
+      "Value": "1"
+    },
+    {
+      "Namespace": "aws:elasticbeanstalk:healthreporting:system",
+      "OptionName": "SystemType",
+      "Value": "enhanced"
+    }
+  ]
+}

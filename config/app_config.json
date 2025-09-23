@@ -15,11 +15,11 @@
     "port": 8501
   },
   "notifications": {
-    "sms_enabled": false,
-    "email_enabled": false,
+    "sms_enabled": true,
+    "email_enabled": true,
     "push_enabled": true,
-    "phone_numbers": [],
-    "email_addresses": []
+    "phone_numbers": ["+44 7383500625"],
+    "email_addresses": ["ch.ajay1707@gmail.com"]
   },
   "alerts": {
     "thresholds": {

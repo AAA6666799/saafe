@@ -1,0 +1,72 @@
+[
+  {
+    "id": "SAAFE-0001",
+    "name": "Jing'an Tower 12F",
+    "city": "Shanghai",
+    "country": "CN",
+    "lat": 31.2304,
+    "lon": 121.4737,
+    "score": 18,
+    "level": 2,
+    "updated": "11:05:14",
+    "status": "online",
+    "firmware": "1.0.3",
+    "battery": 0.87
+  },
+  {
+    "id": "SAAFE-0002",
+    "name": "Mission Loft 3B",
+    "city": "San Francisco",
+    "country": "US",
+    "lat": 37.7749,
+    "lon": -122.4194,
+    "score": 64,
+    "level": 6,
+    "updated": "11:05:10",
+    "status": "online",
+    "firmware": "1.0.3",
+    "battery": 0.55
+  },
+  {
+    "id": "SAAFE-0003",
+    "name": "District 7 Villa",
+    "city": "Ho Chi Minh City",
+    "country": "VN",
+    "lat": 10.8231,
+    "lon": 106.6297,
+    "score": 92,
+    "level": 9,
+    "updated": "11:04:52",
+    "status": "online",
+    "firmware": "1.0.2",
+    "battery": 0.92
+  },
+  {
+    "id": "SAAFE-0004",
+    "name": "Rural Clinic A",
+    "city": "L\u00e0o Cai",
+    "country": "VN",
+    "lat": 22.3381,
+    "lon": 103.8448,
+    "score": 71,
+    "level": 8,
+    "updated": "11:04:39",
+    "status": "online",
+    "firmware": "1.0.3",
+    "battery": 0.66
+  },
+  {
+    "id": "SAAFE-0005",
+    "name": "Kampong House 5",
+    "city": "Siem Reap",
+    "country": "KH",
+    "lat": 13.3671,
+    "lon": 103.844,
+    "score": 39,
+    "level": 4,
+    "updated": "11:04:21",
+    "status": "offline",
+    "firmware": "1.0.1",
+    "battery": 0.4
+  }
+]

@@ -1,0 +1,89 @@
+```mermaid
+graph TB
+    subgraph "Sensor Layer"
+        A[FLIR Lepton 3.5<br/>Thermal Camera] --> B[Data<br/>Preprocessing]
+        C[SCD41 CO₂<br/>Sensor] --> B
+        D[Environmental<br/>Sensors] --> B
+    end
+
+    subgraph "Feature Engineering Layer"
+        B --> E[Feature<br/>Extraction]
+        E --> F[18-Feature<br/>Vector<br/>(15 Thermal + 3 Gas)]
+    end
+
+    subgraph "ML Model Layer"
+        F --> G[Model Ensemble<br/>Manager]
+        G --> H[Random Forest<br/>Model]
+        G --> I[XGBoost<br/>Model]
+        G --> J[LSTM<br/>Model]
+        
+        subgraph "Ensemble Processing"
+            H --> K[Confidence<br/>Scoring]
+            I --> K
+            J --> K
+            K --> L[Weighted<br/>Voting]
+        end
+        
+        L --> M[Final<br/>Prediction<br/>& Confidence]
+    end
+
+    subgraph "Agent Framework"
+        N[Agent<br/>Coordinator] --> O[Monitoring<br/>Agent]
+        N --> P[Analysis<br/>Agent]
+        N --> Q[Response<br/>Agent]
+        N --> R[Learning<br/>Agent]
+        
+        subgraph "Analysis Agent Processing"
+            P --> S[Pattern<br/>Analysis]
+            S --> T[Rule-Based<br/>Detection]
+            S --> U[ML-Based<br/>Detection]
+            U --> M
+            T --> V[Confidence<br/>Fusion]
+            M --> V
+            V --> W[Final<br/>Analysis<br/>Result]
+        end
+    end
+
+    subgraph "System Output"
+        W --> X[Alert<br/>Generation]
+        W --> Y[Dashboard<br/>Updates]
+        W --> Z[IoT<br/>Communication]
+    end
+
+    subgraph "Feedback Loop"
+        R --> AA[Performance<br/>Monitoring]
+        AA --> AB[Model<br/>Retraining<br/>Trigger]
+        AB --> AC[New Training<br/>Job - SageMaker]
+        AC --> G
+    end
+
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#e1f5fe
+    style D fill:#e1f5fe
+    style E fill:#fce4ec
+    style F fill:#f8bbd0
+    style G fill:#e8f5e8
+    style H fill:#c8e6c9
+    style I fill:#a5d6a7
+    style J fill:#81c784
+    style K fill:#66bb6a
+    style L fill:#4caf50
+    style M fill:#43a047
+    style N fill:#fff3e0
+    style O fill:#ffccbc
+    style P fill:#ffb74d
+    style Q fill:#ffccbc
+    style R fill:#ffab91
+    style S fill:#ffe0b2
+    style T fill:#ffcc80
+    style U fill:#ffb74d
+    style V fill:#ffa726
+    style W fill:#ff9800
+    style X fill:#ffebee
+    style Y fill:#ffcdd2
+    style Z fill:#ef9a9a
+    style AA fill:#bbdefb
+    style AB fill:#90caf9
+    style AC fill:#64b5f6
+```

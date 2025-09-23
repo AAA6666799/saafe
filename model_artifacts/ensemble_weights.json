@@ -1,0 +1,17 @@
+{
+  "models": [
+    "Random Forest",
+    "Gradient Boosting",
+    "Logistic Regression"
+  ],
+  "weights": [
+    0.490169713810967,
+    0.48542617313567,
+    0.024404113053362916
+  ],
+  "validation_scores": [
+    0.6933598937583001,
+    0.6932005312084993,
+    0.6441965471447543
+  ]
+}

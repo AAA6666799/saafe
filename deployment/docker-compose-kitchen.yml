@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  kitchen-fire-detection:
+    build:
+      context: /Volumes/Ajay/saafe copy 3
+      dockerfile: Dockerfile
+    image: saafe/kitchen-fire-detection:latest
+    container_name: kitchen-fire-detection
+    ports:
+      - "8501:8501"
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+    volumes:
+      - /Volumes/Ajay/saafe copy 3/logs:/app/logs
+      - /Volumes/Ajay/saafe copy 3/config:/app/config
+      - /Volumes/Ajay/saafe copy 3/models:/app/models
+    restart: unless-stopped
+    privileged: true  # Required for hardware access

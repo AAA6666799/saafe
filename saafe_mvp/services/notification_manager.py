@@ -255,13 +255,14 @@ class NotificationManager:
         self.logger.info(f"Alert notification complete: {result.total_sent} sent, {result.total_failed} failed")
         return result
     
-    def send_fire_alert(self, risk_score: float = None, location: str = None, **kwargs) -> Dict[str, Any]:
+    def send_fire_alert(self, risk_score: float = None, location: str = None, message: str = None, **kwargs) -> Dict[str, Any]:
         """
         Send fire alert notification across all enabled channels
         
         Args:
             risk_score: Fire risk score (0-100)
             location: Location of detected fire
+            message: Custom message for the alert
             **kwargs: Additional alert parameters
             
         Returns:
@@ -280,12 +281,15 @@ class NotificationManager:
         else:
             alert_level = AlertLevel.CRITICAL  # Default for fire alerts
         
-        # Create fire-specific message
-        message = kwargs.get('message', f"🔥 FIRE ALERT: Risk level {risk_score:.1f}%" if risk_score else "🔥 FIRE DETECTED")
+        # Create fire-specific message if not provided
+        if message is None:
+            message = f"🔥 FIRE ALERT: Risk level {risk_score:.1f}%" if risk_score else "🔥 FIRE DETECTED"
         if location:
             message += f" at {location}"
         
         # Send alert using the main send_alert method
+        # Remove message from kwargs if it exists to avoid duplication
+        kwargs.pop('message', None)
         result = self.send_alert(alert_level, message=message, **kwargs)
         
         # Convert to format expected by tests

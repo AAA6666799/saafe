@@ -2,6 +2,51 @@
 # Multi-stage build for optimized production deployment
 # Built with enterprise security and performance best practices
 
+# Use Python 3.9 slim image
+FROM python:3.9-slim
+
+# Set working directory
+WORKDIR /app
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements file
+COPY dashboard_requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r dashboard_requirements.txt
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash saafe
+USER saafe
+WORKDIR /home/saafe/app
+
+# Copy application code
+COPY --chown=saafe:saafe saafe_aws_dashboard.py .
+COPY --chown=saafe:saafe run_aws_dashboard.py .
+COPY --chown=saafe:saafe start_aws_dashboard.sh .
+
+# Make the start script executable
+RUN chmod +x start_aws_dashboard.sh
+
+# Expose port
+EXPOSE 8502
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8502/_stcore/health
+
+# Run Streamlit application
+CMD ["./start_aws_dashboard.sh"]
+
 # Build stage
 FROM python:3.9-slim as builder
 

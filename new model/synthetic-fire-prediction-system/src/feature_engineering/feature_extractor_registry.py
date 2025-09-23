@@ -200,33 +200,27 @@ class FeatureExtractorRegistry:
             
             # Discover extractors in Python files
             for filename in os.listdir(package_dir):
-                # Skip non-Python files and special files
-                if not filename.endswith(".py") or filename.startswith("__"):
-                    continue
-                
-                # Get module name
-                module_name = filename[:-3]  # Remove .py extension
-                
-                # Import the module
-                module_path = f"{package_path}.{module_name}"
-                
-                try:
-                    module = importlib.import_module(module_path)
+                if filename.endswith('.py') and filename != '__init__.py':
+                    module_name = filename[:-3]  # Remove .py extension
+                    full_module_path = f"{package_path}.{module_name}"
                     
-                    # Find feature extractor classes in the module
-                    for name, obj in inspect.getmembers(module):
-                        if (inspect.isclass(obj) and 
-                            issubclass(obj, FeatureExtractor) and 
-                            obj != FeatureExtractor and
-                            obj != TemporalFeatureExtractor):
-                            
-                            # Register the feature extractor
-                            extractor_name = self._get_extractor_name(obj, module_name)
-                            self.register(extractor_name, obj)
-                
-                except Exception as e:
-                    self.logger.warning(f"Error importing module '{module_path}': {str(e)}")
-        
+                    try:
+                        # Import the module
+                        module = importlib.import_module(full_module_path)
+                        
+                        # Find FeatureExtractor subclasses
+                        for name, obj in inspect.getmembers(module):
+                            if (inspect.isclass(obj) and 
+                                issubclass(obj, FeatureExtractor) and 
+                                obj != FeatureExtractor and
+                                obj != TemporalFeatureExtractor):
+                                # Register the extractor
+                                extractor_name = f"{package_path.split('.')[-1]}.{name}"
+                                self.register(extractor_name, obj)
+                                
+                    except Exception as e:
+                        self.logger.warning(f"Error importing module {full_module_path}: {str(e)}")
+            
         except Exception as e:
             self.logger.error(f"Error discovering feature extractors in '{package_path}': {str(e)}")
     

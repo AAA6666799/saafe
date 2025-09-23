@@ -1,0 +1,30 @@
+{
+  "sensor_mode": "real",
+  "thermal_sensors": {
+    "mlx90640_thermal": {
+      "device_address": 51,
+      "resolution": [32, 24],
+      "temperature_range": [-40.0, 300.0],
+      "frame_rate": 8.0,
+      "sensor_type": "grove_mlx90640"
+    }
+  },
+  "gas_sensors": {
+    "multichannel_gas_v2": {
+      "device_address": "/dev/ttyUSB0",
+      "supported_gases": ["co", "no2", "voc"],
+      "alarm_thresholds": {
+        "co": 50.0,
+        "no2": 1.0,
+        "voc": 500.0
+      },
+      "sensor_type": "grove_multichannel_v2"
+    }
+  },
+  "environmental_sensors": {
+    "scd41_co2": {
+      "device_address": 98,
+      "sensor_type": "sensirion_scd41"
+    }
+  }
+}

@@ -1,1 +1,0 @@
-# Placeholder for mock hardware interface components

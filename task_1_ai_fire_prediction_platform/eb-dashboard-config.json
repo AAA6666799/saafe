@@ -1,0 +1,23 @@
+{
+  "ApplicationName": "saafe-fire-dashboard",
+  "EnvironmentName": "saafe-fire-dashboard-env",
+  "VersionLabel": "v1",
+  "SolutionStackName": "64bit Amazon Linux 2023 v4.7.1 running Python 3.13",
+  "OptionSettings": [
+    {
+      "Namespace": "aws:elasticbeanstalk:environment",
+      "OptionName": "EnvironmentType",
+      "Value": "SingleInstance"
+    },
+    {
+      "Namespace": "aws:elasticbeanstalk:healthreporting:system",
+      "OptionName": "SystemType",
+      "Value": "enhanced"
+    },
+    {
+      "Namespace": "aws:autoscaling:launchconfiguration",
+      "OptionName": "IamInstanceProfile",
+      "Value": "aws-elasticbeanstalk-ec2-role"
+    }
+  ]
+}

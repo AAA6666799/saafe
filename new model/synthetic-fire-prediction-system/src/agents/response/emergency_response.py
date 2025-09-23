@@ -108,15 +108,17 @@ class EmergencyResponseAgent(ResponseAgent):
             # Extract risk assessment data
             risk_assessment = data.get('risk_assessment', {})
             analysis_results = data.get('analysis_results', {})
+            # FLIR + SCD41 features are now extracted within the methods from risk_assessment
             
             # Determine response level
-            response_level = self.determine_response_level(risk_assessment)
+            response_level_int = self.determine_response_level(risk_assessment)
+            response_level = ResponseLevel(response_level_int)
             
             # Generate alerts based on response level
-            alerts = self.generate_alerts(risk_assessment, response_level.value)
+            alerts = self.generate_alerts(risk_assessment, response_level_int)
             
             # Generate action recommendations
-            recommendations = self.generate_recommendations(risk_assessment, response_level.value)
+            recommendations = self.generate_recommendations(risk_assessment, response_level_int)
             
             # Execute immediate response actions
             response_actions = self._execute_response_actions(response_level, risk_assessment)
@@ -163,7 +165,7 @@ class EmergencyResponseAgent(ResponseAgent):
                 'recommendations': []
             }
     
-    def determine_response_level(self, risk_assessment: Dict[str, Any]) -> ResponseLevel:
+    def determine_response_level(self, risk_assessment: Dict[str, Any]) -> int:
         """
         Determine the appropriate response level based on risk assessment.
         
@@ -177,8 +179,39 @@ class EmergencyResponseAgent(ResponseAgent):
         confidence = risk_assessment.get('confidence', 0.0)
         fire_detected = risk_assessment.get('fire_detected', False)
         
+        # Extract FLIR + SCD41 features from risk assessment
+        thermal_features = risk_assessment.get('thermal_features', {})
+        gas_features = risk_assessment.get('gas_features', {})
+        
         # Adjust risk score based on confidence
         adjusted_risk = risk_score * confidence
+        
+        # Apply FLIR + SCD41 specific risk adjustments
+        if thermal_features:
+            # High temperature risk factor
+            t_max = thermal_features.get('t_max', 0.0)
+            if t_max > 80:  # Critical temperature threshold
+                adjusted_risk = min(1.0, adjusted_risk * 1.5)
+            elif t_max > 60:  # Elevated temperature threshold
+                adjusted_risk = min(1.0, adjusted_risk * 1.2)
+            
+            # Hot area percentage risk factor
+            hot_area_pct = thermal_features.get('t_hot_area_pct', 0.0)
+            if hot_area_pct > 20:  # Large hot area
+                adjusted_risk = min(1.0, adjusted_risk * 1.3)
+        
+        if gas_features:
+            # CO₂ concentration risk factor
+            gas_val = gas_features.get('gas_val', 400.0)
+            if gas_val > 3000:  # Critical CO₂ level
+                adjusted_risk = min(1.0, adjusted_risk * 1.4)
+            elif gas_val > 1500:  # Elevated CO₂ level
+                adjusted_risk = min(1.0, adjusted_risk * 1.1)
+            
+            # CO₂ change rate risk factor
+            gas_delta = abs(gas_features.get('gas_delta', 0.0))
+            if gas_delta > 200:  # Rapid CO₂ increase
+                adjusted_risk = min(1.0, adjusted_risk * 1.2)
         
         # Determine base response level from thresholds
         response_level = ResponseLevel.NONE
@@ -193,7 +226,7 @@ class EmergencyResponseAgent(ResponseAgent):
         # Check for suppression (to prevent alert spam)
         response_level = self._apply_suppression_logic(response_level, risk_assessment)
         
-        return response_level
+        return response_level.value
     
     def generate_alerts(self, risk_assessment: Dict[str, Any], response_level: int) -> List[Dict[str, Any]]:
         """
@@ -211,13 +244,17 @@ class EmergencyResponseAgent(ResponseAgent):
         if response_level == ResponseLevel.NONE.value:
             return alerts
         
+        # Extract FLIR + SCD41 features from risk assessment
+        thermal_features = risk_assessment.get('thermal_features', {})
+        gas_features = risk_assessment.get('gas_features', {})
+        
         # Determine alert type based on response level
         alert_type = self._determine_alert_type(response_level)
         
         # Generate primary alert
         primary_alert = self._create_alert(
             alert_type=alert_type,
-            message=self._generate_alert_message(risk_assessment, response_level),
+            message=self._generate_alert_message(risk_assessment, response_level, thermal_features, gas_features),
             risk_assessment=risk_assessment,
             response_level=response_level
         )
@@ -318,6 +355,96 @@ class EmergencyResponseAgent(ResponseAgent):
         }
         
         recommendations.extend(level_recommendations.get(response_level, []))
+        
+        # Add specific recommendations based on FLIR + SCD41 features
+        # Extract FLIR + SCD41 features from risk assessment
+        thermal_features = risk_assessment.get('thermal_features', {})
+        gas_features = risk_assessment.get('gas_features', {})
+        
+        if thermal_features:
+            t_max = thermal_features.get('t_max', 0.0)
+            hot_area_pct = thermal_features.get('t_hot_area_pct', 0.0)
+            flow_mag = thermal_features.get('flow_mag_mean', 0.0)
+            
+            if t_max > 70:
+                recommendations.extend([
+                    "Critical thermal hazard detected - immediate attention required",
+                    "Deploy thermal protection equipment",
+                    "Establish thermal safety perimeter"
+                ])
+            elif t_max > 50:
+                recommendations.append("Monitor elevated temperature zones")
+            
+            if hot_area_pct > 15:
+                recommendations.extend([
+                    "Large thermal anomaly detected",
+                    "Assess thermal spread patterns",
+                    "Prepare thermal containment measures"
+                ])
+            
+            if flow_mag > 1.0:
+                recommendations.append("Thermal movement detected - monitor for spread")
+        
+        if gas_features:
+            gas_val = gas_features.get('gas_val', 400.0)
+            gas_delta = gas_features.get('gas_delta', 0.0)
+            gas_vel = gas_features.get('gas_vel', 0.0)
+            
+            if gas_val > 2000:
+                recommendations.extend([
+                    "Elevated CO₂ levels detected",
+                    "Ensure adequate ventilation",
+                    "Monitor respiratory safety"
+                ])
+            
+            if abs(gas_delta) > 150:
+                recommendations.append("Rapid CO₂ concentration change - potential fire indicator")
+            
+            if abs(gas_vel) > 20:
+                recommendations.append("Accelerating CO₂ release - fire progression likely")
+        
+        # Add specific recommendations based on FLIR + SCD41 features
+        if thermal_features:
+            t_max = thermal_features.get('t_max', 0.0)
+            hot_area_pct = thermal_features.get('t_hot_area_pct', 0.0)
+            flow_mag = thermal_features.get('flow_mag_mean', 0.0)
+            
+            if t_max > 70:
+                recommendations.extend([
+                    "Critical thermal hazard detected - immediate attention required",
+                    "Deploy thermal protection equipment",
+                    "Establish thermal safety perimeter"
+                ])
+            elif t_max > 50:
+                recommendations.append("Monitor elevated temperature zones")
+            
+            if hot_area_pct > 15:
+                recommendations.extend([
+                    "Large thermal anomaly detected",
+                    "Assess thermal spread patterns",
+                    "Prepare thermal containment measures"
+                ])
+            
+            if flow_mag > 1.0:
+                recommendations.append("Thermal movement detected - monitor for spread")
+        
+        if gas_features:
+            gas_val = gas_features.get('gas_val', 400.0)
+            gas_delta = gas_features.get('gas_delta', 0.0)
+            gas_vel = gas_features.get('gas_vel', 0.0)
+            
+            if gas_val > 2000:
+                recommendations.extend([
+                    "Elevated CO₂ levels detected",
+                    "Ensure adequate ventilation",
+                    "Monitor respiratory safety"
+                ])
+            
+            if abs(gas_delta) > 150:
+                recommendations.append("Rapid CO₂ concentration change - potential fire indicator")
+            
+            if abs(gas_vel) > 20:
+                recommendations.append("Accelerating CO₂ release - fire progression likely")
         
         # Add specific recommendations based on risk factors
         if risk_assessment.get('thermal_risk', 0.0) > 0.7:
@@ -466,20 +593,49 @@ class EmergencyResponseAgent(ResponseAgent):
             'agent_id': self.agent_id
         }
     
-    def _generate_alert_message(self, risk_assessment: Dict[str, Any], response_level: int) -> str:
+    def _generate_alert_message(self, risk_assessment: Dict[str, Any], response_level: int,
+                               thermal_features: Optional[Dict[str, Any]] = None,
+                               gas_features: Optional[Dict[str, Any]] = None) -> str:
         """Generate alert message text based on risk assessment."""
         risk_score = risk_assessment.get('risk_score', 0.0)
         confidence = risk_assessment.get('confidence', 0.0)
         location = risk_assessment.get('location', 'Unknown location')
         
+        # Extract FLIR + SCD41 features from risk assessment if not provided
+        if thermal_features is None:
+            thermal_features = risk_assessment.get('thermal_features', {})
+        if gas_features is None:
+            gas_features = risk_assessment.get('gas_features', {})
+        
+        # Create base message
+        base_message = f"at {location} (Risk: {risk_score:.1%}, Confidence: {confidence:.1%})"
+        
+        # Add FLIR + SCD41 specific details if available
+        details = []
+        if thermal_features:
+            t_max = thermal_features.get('t_max', 0.0)
+            hot_area_pct = thermal_features.get('t_hot_area_pct', 0.0)
+            details.append(f"Max Temp: {t_max:.1f}°C")
+            if hot_area_pct > 5:
+                details.append(f"Hot Area: {hot_area_pct:.1f}%")
+        
+        if gas_features:
+            gas_val = gas_features.get('gas_val', 400.0)
+            if gas_val > 600:
+                details.append(f"CO₂: {gas_val:.0f} ppm")
+        
+        # Add details to message if available
+        if details:
+            base_message = f"at {location} (Risk: {risk_score:.1%}, Confidence: {confidence:.1%}) - {', '.join(details)}"
+        
         if response_level >= ResponseLevel.CRITICAL.value:
-            return f"CRITICAL FIRE ALERT: High fire risk detected at {location} (Risk: {risk_score:.1%}, Confidence: {confidence:.1%})"
+            return f"CRITICAL FIRE ALERT: High fire risk detected {base_message}"
         elif response_level >= ResponseLevel.HIGH.value:
-            return f"FIRE EMERGENCY: Fire detected at {location} (Risk: {risk_score:.1%}, Confidence: {confidence:.1%})"
+            return f"FIRE EMERGENCY: Fire detected {base_message}"
         elif response_level >= ResponseLevel.MEDIUM.value:
-            return f"FIRE WARNING: Elevated fire risk at {location} (Risk: {risk_score:.1%}, Confidence: {confidence:.1%})"
+            return f"FIRE WARNING: Elevated fire risk {base_message}"
         else:
-            return f"Fire monitoring alert: Increased fire indicators at {location} (Risk: {risk_score:.1%})"
+            return f"Fire monitoring alert: Increased fire indicators {base_message}"
     
     def _update_state(self, response_result: Dict[str, Any]) -> None:
         """Update agent state with response results."""

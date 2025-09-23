@@ -1,0 +1,53 @@
+{
+  "xgboost": {
+    "model_path": "/Volumes/Ajay/saafe copy 3/new model/data/flir_scd41/flir_scd41_xgboost_model_improved.json",
+    "metrics": {
+      "accuracy": 0.8113333333333334,
+      "f1_score": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "auc": 0.5057242654851326
+    }
+  },
+  "neural_network": {
+    "model_path": "/Volumes/Ajay/saafe copy 3/new model/data/flir_scd41/best_improved_nn_model.pth",
+    "metrics": {
+      "accuracy": 0.8113333333333334,
+      "f1_score": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "auc": 0.4987964960468742
+    }
+  },
+  "ensemble": {
+    "weights_path": "/Volumes/Ajay/saafe copy 3/new model/data/flir_scd41/ensemble_weights_improved.json",
+    "metrics": {
+      "accuracy": 0.8113333333333334,
+      "f1_score": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "auc": 0.5085784135814477
+    }
+  },
+  "feature_names": [
+    "t_mean",
+    "t_std",
+    "t_max",
+    "t_p95",
+    "t_hot_area_pct",
+    "t_hot_largest_blob_pct",
+    "t_grad_mean",
+    "t_grad_std",
+    "t_diff_mean",
+    "t_diff_std",
+    "flow_mag_mean",
+    "flow_mag_std",
+    "tproxy_val",
+    "tproxy_delta",
+    "tproxy_vel",
+    "gas_val",
+    "gas_delta",
+    "gas_vel"
+  ],
+  "training_date": "2025-08-28T14:30:35.584641"
+}

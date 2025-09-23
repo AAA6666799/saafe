@@ -22,15 +22,31 @@ class MockSensorBase:
     Base class for mock sensors with common functionality.
     """
     
-    def __init__(self):
+    def __init__(self, config: Dict[str, Any]):
         """
         Initialize the mock sensor base.
+        
+        Args:
+            config: Dictionary containing configuration parameters
         """
+        self.config = config
+        self.sensor_id = config.get('sensor_id', 'unknown')
+        self.sensor_type = config.get('sensor_type', 'unknown')
         self.connected = False
         self.last_read_time = None
         self.error_rate = 0.01  # 1% chance of read error
         self.battery_level = 100.0
         self.firmware_version = "1.0.0"
+    
+    def validate_config(self) -> None:
+        """
+        Validate the configuration parameters.
+        
+        Raises:
+            ValueError: If configuration is invalid
+        """
+        # Base implementation does nothing
+        pass
     
     def connect(self) -> bool:
         """
@@ -97,7 +113,7 @@ class MockSensorBase:
         return True
 
 
-class MockThermalSensor(ThermalSensorInterface, MockSensorBase):
+class MockThermalSensor(ThermalSensorInterface):
     """
     Mock implementation of a thermal sensor.
     """
@@ -109,15 +125,18 @@ class MockThermalSensor(ThermalSensorInterface, MockSensorBase):
         Args:
             config: Dictionary containing configuration parameters
         """
-        ThermalSensorInterface.__init__(self, config)
-        MockSensorBase.__init__(self)
+        # Initialize the base class first
+        super().__init__(config)
         
+        # Set attributes after calling super().__init__
         self.width = config.get('width', 384)
         self.height = config.get('height', 288)
         self.min_temp = config.get('min_temp', 0.0)
         self.max_temp = config.get('max_temp', 500.0)
         self.ambient_temp = config.get('ambient_temp', 25.0)
         self.noise_level = config.get('noise_level', 1.0)
+        self.connected = False
+        self.last_read_time = None
         
         # Generate a base thermal image with ambient temperature
         self.base_image = np.ones((self.height, self.width)) * self.ambient_temp
@@ -135,6 +154,33 @@ class MockThermalSensor(ThermalSensorInterface, MockSensorBase):
         if self.min_temp >= self.max_temp:
             raise ValueError("Invalid temperature range")
     
+    def connect(self) -> bool:
+        """
+        Connect to the mock sensor.
+        
+        Returns:
+            True if connection is successful, False otherwise
+        """
+        # Simulate occasional connection failures
+        if random.random() < 0.05:  # 5% chance of connection failure
+            return False
+        
+        self.connected = True
+        return True
+    
+    def disconnect(self) -> bool:
+        """
+        Disconnect from the mock sensor.
+        
+        Returns:
+            True if disconnection is successful, False otherwise
+        """
+        if not self.connected:
+            return False
+        
+        self.connected = False
+        return True
+    
     def read(self) -> Dict[str, Any]:
         """
         Read data from the mock thermal sensor.
@@ -146,7 +192,7 @@ class MockThermalSensor(ThermalSensorInterface, MockSensorBase):
             raise RuntimeError("Sensor not connected")
         
         # Simulate occasional read errors
-        if random.random() < self.error_rate:
+        if random.random() < 0.01:  # 1% chance of read error
             raise RuntimeError("Sensor read error")
         
         self.last_read_time = datetime.now()
@@ -168,6 +214,40 @@ class MockThermalSensor(ThermalSensorInterface, MockSensorBase):
             "sensor_id": self.sensor_id,
             "sensor_type": self.sensor_type
         }
+    
+    def get_status(self) -> Dict[str, Any]:
+        """
+        Get the status of the mock sensor.
+        
+        Returns:
+            Dictionary containing sensor status information
+        """
+        return {
+            "connected": self.connected,
+            "sensor_id": self.sensor_id,
+            "sensor_type": self.sensor_type,
+            "width": self.width,
+            "height": self.height,
+            "min_temp": self.min_temp,
+            "max_temp": self.max_temp,
+            "last_read_time": self.last_read_time.isoformat() if self.last_read_time else None
+        }
+    
+    def calibrate(self) -> bool:
+        """
+        Calibrate the mock sensor.
+        
+        Returns:
+            True if calibration is successful, False otherwise
+        """
+        if not self.connected:
+            return False
+        
+        # Simulate occasional calibration failures
+        if random.random() < 0.1:  # 10% chance of calibration failure
+            return False
+        
+        return True
     
     def get_thermal_image(self) -> np.ndarray:
         """
@@ -228,7 +308,7 @@ class MockThermalSensor(ThermalSensorInterface, MockSensorBase):
         return (self.min_temp, self.max_temp)
 
 
-class MockGasSensor(GasSensorInterface, MockSensorBase):
+class MockGasSensor(GasSensorInterface):
     """
     Mock implementation of a gas sensor.
     """
@@ -240,12 +320,15 @@ class MockGasSensor(GasSensorInterface, MockSensorBase):
         Args:
             config: Dictionary containing configuration parameters
         """
-        GasSensorInterface.__init__(self, config)
-        MockSensorBase.__init__(self)
+        # Initialize the base class first
+        super().__init__(config)
         
+        # Set attributes after calling super().__init__
         self.supported_gases = config.get('supported_gases', ['methane', 'propane', 'hydrogen'])
         self.baseline_concentrations = {}
         self.alarm_thresholds = {}
+        self.connected = False
+        self.last_read_time = None
         
         # Set baseline concentrations and alarm thresholds
         for gas in self.supported_gases:
@@ -262,6 +345,33 @@ class MockGasSensor(GasSensorInterface, MockSensorBase):
         if not self.supported_gases:
             raise ValueError("No supported gases specified")
     
+    def connect(self) -> bool:
+        """
+        Connect to the mock sensor.
+        
+        Returns:
+            True if connection is successful, False otherwise
+        """
+        # Simulate occasional connection failures
+        if random.random() < 0.05:  # 5% chance of connection failure
+            return False
+        
+        self.connected = True
+        return True
+    
+    def disconnect(self) -> bool:
+        """
+        Disconnect from the mock sensor.
+        
+        Returns:
+            True if disconnection is successful, False otherwise
+        """
+        if not self.connected:
+            return False
+        
+        self.connected = False
+        return True
+    
     def read(self) -> Dict[str, Any]:
         """
         Read data from the mock gas sensor.
@@ -273,7 +383,7 @@ class MockGasSensor(GasSensorInterface, MockSensorBase):
             raise RuntimeError("Sensor not connected")
         
         # Simulate occasional read errors
-        if random.random() < self.error_rate:
+        if random.random() < 0.01:  # 1% chance of read error
             raise RuntimeError("Sensor read error")
         
         self.last_read_time = datetime.now()
@@ -293,6 +403,38 @@ class MockGasSensor(GasSensorInterface, MockSensorBase):
             "sensor_id": self.sensor_id,
             "sensor_type": self.sensor_type
         }
+    
+    def get_status(self) -> Dict[str, Any]:
+        """
+        Get the status of the mock sensor.
+        
+        Returns:
+            Dictionary containing sensor status information
+        """
+        return {
+            "connected": self.connected,
+            "sensor_id": self.sensor_id,
+            "sensor_type": self.sensor_type,
+            "supported_gases": self.supported_gases,
+            "alarm_thresholds": self.alarm_thresholds,
+            "last_read_time": self.last_read_time.isoformat() if self.last_read_time else None
+        }
+    
+    def calibrate(self) -> bool:
+        """
+        Calibrate the mock sensor.
+        
+        Returns:
+            True if calibration is successful, False otherwise
+        """
+        if not self.connected:
+            return False
+        
+        # Simulate occasional calibration failures
+        if random.random() < 0.1:  # 10% chance of calibration failure
+            return False
+        
+        return True
     
     def get_gas_concentration(self, gas_type: Optional[str] = None) -> Dict[str, float]:
         """
@@ -355,7 +497,7 @@ class MockGasSensor(GasSensorInterface, MockSensorBase):
         return True
 
 
-class MockEnvironmentalSensor(EnvironmentalSensorInterface, MockSensorBase):
+class MockEnvironmentalSensor(EnvironmentalSensorInterface):
     """
     Mock implementation of an environmental sensor.
     """
@@ -367,14 +509,17 @@ class MockEnvironmentalSensor(EnvironmentalSensorInterface, MockSensorBase):
         Args:
             config: Dictionary containing configuration parameters
         """
-        EnvironmentalSensorInterface.__init__(self, config)
-        MockSensorBase.__init__(self)
+        # Initialize the base class first
+        super().__init__(config)
         
+        # Set attributes after calling super().__init__
         self.base_temperature = config.get('base_temperature', 25.0)
         self.base_humidity = config.get('base_humidity', 50.0)
         self.base_pressure = config.get('base_pressure', 1013.25)
         self.supported_vocs = config.get('supported_vocs', ['benzene', 'formaldehyde', 'toluene'])
         self.base_voc_levels = {}
+        self.connected = False
+        self.last_read_time = None
         
         # Set base VOC levels
         for voc in self.supported_vocs:
@@ -396,6 +541,33 @@ class MockEnvironmentalSensor(EnvironmentalSensorInterface, MockSensorBase):
         if self.base_pressure <= 0:
             raise ValueError("Invalid base pressure")
     
+    def connect(self) -> bool:
+        """
+        Connect to the mock sensor.
+        
+        Returns:
+            True if connection is successful, False otherwise
+        """
+        # Simulate occasional connection failures
+        if random.random() < 0.05:  # 5% chance of connection failure
+            return False
+        
+        self.connected = True
+        return True
+    
+    def disconnect(self) -> bool:
+        """
+        Disconnect from the mock sensor.
+        
+        Returns:
+            True if disconnection is successful, False otherwise
+        """
+        if not self.connected:
+            return False
+        
+        self.connected = False
+        return True
+    
     def read(self) -> Dict[str, Any]:
         """
         Read data from the mock environmental sensor.
@@ -407,7 +579,7 @@ class MockEnvironmentalSensor(EnvironmentalSensorInterface, MockSensorBase):
             raise RuntimeError("Sensor not connected")
         
         # Simulate occasional read errors
-        if random.random() < self.error_rate:
+        if random.random() < 0.01:  # 1% chance of read error
             raise RuntimeError("Sensor read error")
         
         self.last_read_time = datetime.now()
@@ -434,6 +606,40 @@ class MockEnvironmentalSensor(EnvironmentalSensorInterface, MockSensorBase):
             "sensor_id": self.sensor_id,
             "sensor_type": self.sensor_type
         }
+    
+    def get_status(self) -> Dict[str, Any]:
+        """
+        Get the status of the mock sensor.
+        
+        Returns:
+            Dictionary containing sensor status information
+        """
+        return {
+            "connected": self.connected,
+            "sensor_id": self.sensor_id,
+            "sensor_type": self.sensor_type,
+            "base_temperature": self.base_temperature,
+            "base_humidity": self.base_humidity,
+            "base_pressure": self.base_pressure,
+            "supported_vocs": self.supported_vocs,
+            "last_read_time": self.last_read_time.isoformat() if self.last_read_time else None
+        }
+    
+    def calibrate(self) -> bool:
+        """
+        Calibrate the mock sensor.
+        
+        Returns:
+            True if calibration is successful, False otherwise
+        """
+        if not self.connected:
+            return False
+        
+        # Simulate occasional calibration failures
+        if random.random() < 0.1:  # 10% chance of calibration failure
+            return False
+        
+        return True
     
     def get_temperature(self) -> float:
         """

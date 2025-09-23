@@ -1,0 +1,18 @@
+{
+  "ApplicationName": "saafe-dashboard",
+  "EnvironmentName": "saafe-dashboard-simple",
+  "VersionLabel": "v2",
+  "SolutionStackName": "64bit Amazon Linux 2023 v4.7.1 running Python 3.13",
+  "OptionSettings": [
+    {
+      "Namespace": "aws:elasticbeanstalk:environment",
+      "OptionName": "EnvironmentType",
+      "Value": "SingleInstance"
+    },
+    {
+      "Namespace": "aws:elasticbeanstalk:healthreporting:system",
+      "OptionName": "SystemType",
+      "Value": "enhanced"
+    }
+  ]
+}

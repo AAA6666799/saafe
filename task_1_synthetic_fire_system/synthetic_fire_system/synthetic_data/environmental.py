@@ -1,1 +1,0 @@
-# Placeholder for environmental data generation components

@@ -1,0 +1,53 @@
+```mermaid
+graph TB
+    subgraph "Hardware Layer"
+        A[FLIR Lepton 3.5<br/>Thermal Camera] --> D{Data<br/>Processing}
+        B[SCD41 CO₂ Sensor] --> D
+        C[Environmental<br/>Sensors] --> D
+    end
+
+    subgraph "Feature Engineering"
+        D --> E[Feature Extraction<br/>18 Features:<br/>• 15 Thermal<br/>• 3 Gas]
+    end
+
+    subgraph "Machine Learning Layer"
+        E --> F[Model Ensemble Manager]
+        F --> G[Random Forest<br/>Model]
+        F --> H[XGBoost<br/>Model]
+        F --> I[LSTM<br/>Model]
+        F --> J[Ensemble<br/>Classifier]
+    end
+
+    subgraph "Agent Framework"
+        K[Monitoring Agent] --> L[Agent<br/>Coordinator]
+        F --> M[Analysis Agent]
+        M --> L
+        N[Response Agent] --> L
+        O[Learning Agent] --> L
+    end
+
+    subgraph "Output Layer"
+        L --> P[Alerts &<br/>Notifications]
+        L --> Q[System<br/>Dashboard]
+        L --> R[IoT<br/>Communication]
+    end
+
+    style A fill:#e1f5fe
+    style B fill:#e1f5fe
+    style C fill:#e1f5fe
+    style D fill:#f3e5f5
+    style E fill:#f3e5f5
+    style F fill:#e8f5e8
+    style G fill:#c8e6c9
+    style H fill:#c8e6c9
+    style I fill:#c8e6c9
+    style J fill:#c8e6c9
+    style K fill:#fff3e0
+    style M fill:#fff3e0
+    style N fill:#fff3e0
+    style O fill:#fff3e0
+    style L fill:#ffccbc
+    style P fill:#ffebee
+    style Q fill:#ffebee
+    style R fill:#ffebee
+```

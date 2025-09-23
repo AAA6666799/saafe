@@ -1,0 +1,16 @@
+{
+  "models": [
+    "xgboost",
+    "neural_network"
+  ],
+  "weights": [
+    0.5,
+    0.5
+  ],
+  "validation_scores": {
+    "xgboost": 0.8113333333333334,
+    "neural_network": 0.8113333333333334
+  },
+  "calculation_method": "performance_based_exponential_scaling",
+  "scaling_factor": 2.0
+}

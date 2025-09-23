@@ -1,0 +1,60 @@
+```mermaid
+graph TD
+    A[Sensor Data Collection] --> B[Feature Engineering]
+    B --> C[Feature Validation]
+    C --> D[Model Ensemble Manager]
+    D --> E[Individual Model Predictions]
+    
+    subgraph "Model Ensemble"
+        E --> F[Random Forest]
+        E --> G[XGBoost]
+        E --> H[LSTM]
+        F --> I[Model Confidence Scoring]
+        G --> I
+        H --> I
+    end
+    
+    I --> J[Ensemble Decision]
+    J --> K[Confidence Assessment]
+    K --> L[Fire Detection Result]
+    
+    subgraph "Agent Integration"
+        L --> M[Analysis Agent Processing]
+        M --> N[Agent Coordinator]
+        N --> O[Response Agent]
+        N --> P[Monitoring Agent]
+        N --> Q[Learning Agent]
+    end
+    
+    O --> R[Alert Generation]
+    P --> S[System Health Monitoring]
+    Q --> T[Performance Analysis]
+    T --> U[Model Retraining Trigger]
+    U --> V[New Training Job]
+    V --> W[Model Deployment]
+    W --> D
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#fce4ec
+    style D fill:#e8f5e8
+    style E fill:#c8e6c9
+    style F fill:#a5d6a7
+    style G fill:#81c784
+    style H fill:#66bb6a
+    style I fill:#4caf50
+    style J fill:#e8f5e8
+    style K fill:#c8e6c9
+    style L fill:#a5d6a7
+    style M fill:#fff3e0
+    style N fill:#ffccbc
+    style O fill:#ffab91
+    style P fill:#ffccbc
+    style Q fill:#ffab91
+    style R fill:#ffebee
+    style S fill:#ffcdd2
+    style T fill:#bbdefb
+    style U fill:#90caf9
+    style V fill:#64b5f6
+    style W fill:#42a5f5
+```

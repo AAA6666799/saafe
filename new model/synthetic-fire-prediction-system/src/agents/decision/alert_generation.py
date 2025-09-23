@@ -168,6 +168,19 @@ class AlertGenerationAgent(Agent):
         
         self.confidence_threshold = config.get("confidence_threshold", 0.5)
         
+        # Initialize FLIR+SCD41 specific thresholds
+        self.flir_thresholds = config.get("flir_thresholds", {
+            "t_max": 60.0,      # °C
+            "t_hot_area_pct": 10.0,  # %
+            "tproxy_vel": 2.0   # Rate of change
+        })
+        
+        self.scd41_thresholds = config.get("scd41_thresholds", {
+            "gas_val": 1000.0,   # ppm CO₂
+            "gas_delta": 50.0,   # ppm change
+            "gas_vel": 50.0     # Rate of change
+        })
+        
         # Initialize alert state
         self.alerts = []
         self.active_alerts = {}  # alert_id -> Alert
@@ -261,8 +274,8 @@ class AlertGenerationAgent(Agent):
                 metadata={
                     "characteristics": data.get("characteristics", {}),
                     "raw_data": {
-                        "thermal": data.get("thermal", {}),
-                        "gas": data.get("gas", {})
+                        "flir": data.get("flir", {}),
+                        "scd41": data.get("scd41", {})
                     }
                 }
             )
@@ -417,6 +430,26 @@ class AlertGenerationAgent(Agent):
             else:
                 logger.error(f"Invalid confidence threshold: {new_threshold}")
         
+        # Update FLIR thresholds
+        if "flir_thresholds" in content:
+            new_thresholds = content["flir_thresholds"]
+            if isinstance(new_thresholds, dict):
+                self.flir_thresholds.update(new_thresholds)
+                updated = True
+                logger.info(f"Updated FLIR thresholds: {new_thresholds}")
+            else:
+                logger.error(f"Invalid FLIR thresholds: {new_thresholds}")
+        
+        # Update SCD41 thresholds
+        if "scd41_thresholds" in content:
+            new_thresholds = content["scd41_thresholds"]
+            if isinstance(new_thresholds, dict):
+                self.scd41_thresholds.update(new_thresholds)
+                updated = True
+                logger.info(f"Updated SCD41 thresholds: {new_thresholds}")
+            else:
+                logger.error(f"Invalid SCD41 thresholds: {new_thresholds}")
+        
         # Send acknowledgment
         if updated:
             return self.create_message(
@@ -424,7 +457,9 @@ class AlertGenerationAgent(Agent):
                 "threshold_update_ack",
                 {
                     "severity_thresholds": self.severity_thresholds,
-                    "confidence_threshold": self.confidence_threshold
+                    "confidence_threshold": self.confidence_threshold,
+                    "flir_thresholds": self.flir_thresholds,
+                    "scd41_thresholds": self.scd41_thresholds
                 }
             )
         else:
@@ -524,6 +559,8 @@ class AlertGenerationAgent(Agent):
         state = {
             "severity_thresholds": self.severity_thresholds,
             "confidence_threshold": self.confidence_threshold,
+            "flir_thresholds": self.flir_thresholds,
+            "scd41_thresholds": self.scd41_thresholds,
             "location": self.location,
             "alert_count": self.alert_count,
             "alerts": [alert.to_dict() for alert in self.alerts],
@@ -545,6 +582,8 @@ class AlertGenerationAgent(Agent):
         
         self.severity_thresholds = state["severity_thresholds"]
         self.confidence_threshold = state["confidence_threshold"]
+        self.flir_thresholds = state["flir_thresholds"]
+        self.scd41_thresholds = state["scd41_thresholds"]
         self.location = state["location"]
         self.alert_count = state["alert_count"]
         

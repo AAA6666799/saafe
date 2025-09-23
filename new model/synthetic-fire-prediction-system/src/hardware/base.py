@@ -6,10 +6,19 @@ in the synthetic fire prediction system.
 """
 
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Dict, Any, List, Optional, Union, Tuple
 import numpy as np
 import pandas as pd
 from datetime import datetime
+
+
+class SensorMode(Enum):
+    """Enumeration of sensor operation modes."""
+    SYNTHETIC = "synthetic"
+    REAL = "real"
+    HYBRID = "hybrid"
+    SIMULATION = "simulation"
 
 
 class SensorInterface(ABC):
@@ -289,17 +298,28 @@ class HardwareAbstractionLayer:
         Returns:
             True if initialization is successful, False otherwise
         """
-        # This would be implemented with actual sensor initialization code
-        # For now, we'll use a mock implementation
-        from src.hardware.mock import MockThermalSensor
+        sensor_type = sensor_config.get('sensor_type', 'unknown')
+        
         try:
-            sensor = MockThermalSensor(sensor_config)
+            if sensor_type == 'grove_mlx90641':
+                from src.hardware.specific.mlx90641_interface import MLX90641Interface
+                sensor = MLX90641Interface(sensor_config)
+            elif sensor_type == 'grove_mlx90640':
+                from src.hardware.specific.mlx90640_interface import MLX90640Interface
+                sensor = MLX90640Interface(sensor_config)
+            else:
+                # Default to mock implementation
+                from src.hardware.mock import MockThermalSensor
+                sensor = MockThermalSensor(sensor_config)
+                
             if sensor.connect():
                 self.thermal_sensors[sensor_id] = sensor
                 return True
             return False
         except Exception as e:
             print(f"Failed to initialize thermal sensor {sensor_id}: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def _initialize_gas_sensor(self, sensor_id: str, sensor_config: Dict[str, Any]) -> bool:
@@ -313,17 +333,25 @@ class HardwareAbstractionLayer:
         Returns:
             True if initialization is successful, False otherwise
         """
-        # This would be implemented with actual sensor initialization code
-        # For now, we'll use a mock implementation
-        from src.hardware.mock import MockGasSensor
+        sensor_type = sensor_config.get('sensor_type', 'unknown')
+        
         try:
-            sensor = MockGasSensor(sensor_config)
+            if sensor_type == 'grove_multichannel_v2':
+                from src.hardware.specific.grove_multichannel_v2_interface import GroveMultichannelV2Interface
+                sensor = GroveMultichannelV2Interface(sensor_config)
+            else:
+                # Default to mock implementation
+                from src.hardware.mock import MockGasSensor
+                sensor = MockGasSensor(sensor_config)
+                
             if sensor.connect():
                 self.gas_sensors[sensor_id] = sensor
                 return True
             return False
         except Exception as e:
             print(f"Failed to initialize gas sensor {sensor_id}: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def _initialize_environmental_sensor(self, sensor_id: str, sensor_config: Dict[str, Any]) -> bool:
@@ -337,17 +365,25 @@ class HardwareAbstractionLayer:
         Returns:
             True if initialization is successful, False otherwise
         """
-        # This would be implemented with actual sensor initialization code
-        # For now, we'll use a mock implementation
-        from src.hardware.mock import MockEnvironmentalSensor
+        sensor_type = sensor_config.get('sensor_type', 'unknown')
+        
         try:
-            sensor = MockEnvironmentalSensor(sensor_config)
+            if sensor_type == 'sensirion_scd41':
+                from src.hardware.specific.scd41_interface import SCD41Interface
+                sensor = SCD41Interface(sensor_config)
+            else:
+                # Default to mock implementation
+                from src.hardware.mock import MockEnvironmentalSensor
+                sensor = MockEnvironmentalSensor(sensor_config)
+                
             if sensor.connect():
                 self.environmental_sensors[sensor_id] = sensor
                 return True
             return False
         except Exception as e:
             print(f"Failed to initialize environmental sensor {sensor_id}: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def shutdown(self) -> bool:

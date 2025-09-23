@@ -1,0 +1,5 @@
+# Requirements for Saafe Deployment Manager
+# This file contains only the dependencies needed for the deployment scripts
+
+# No additional dependencies needed beyond Python standard library
+# The deployment manager uses subprocess calls to external tools

@@ -26,157 +26,184 @@ from ...base import ThermalFeatureExtractor
 
 class BasicThermalFeatureExtractor(ThermalFeatureExtractor):
     """
-    Basic implementation of a thermal feature extractor.
+    FLIR Lepton 3.5 thermal feature extractor implementation.
     
-    This class extracts features from thermal image data, including:
-    - Maximum and mean temperature
-    - Hotspot area percentage
-    - Temperature entropy
-    - Motion detection between frames
-    - Temperature rise slope
+    This class extracts the 15 specific features from FLIR Lepton 3.5 thermal data:
+    - t_mean: Mean temperature
+    - t_std: Temperature standard deviation
+    - t_max: Maximum temperature
+    - t_p95: 95th percentile temperature
+    - t_hot_area_pct: Percentage of hot area
+    - t_hot_largest_blob_pct: Largest hot blob percentage
+    - t_grad_mean: Mean temperature gradient
+    - t_grad_std: Standard deviation of temperature gradient
+    - t_diff_mean: Mean temperature difference between frames
+    - t_diff_std: Standard deviation of temperature difference
+    - flow_mag_mean: Mean optical flow magnitude
+    - flow_mag_std: Standard deviation of optical flow magnitude
+    - tproxy_val: Temperature proxy value
+    - tproxy_delta: Temperature proxy delta
+    - tproxy_vel: Temperature proxy velocity
     """
     
     def __init__(self, config: Dict[str, Any]):
         """
-        Initialize the thermal feature extractor.
+        Initialize the FLIR Lepton 3.5 thermal feature extractor.
         
         Args:
             config: Dictionary containing configuration parameters
         """
         super().__init__(config)
         self.logger = logging.getLogger(__name__)
+        
+        # FLIR Lepton 3.5 specific parameters
+        self.flir_features = [
+            't_mean', 't_std', 't_max', 't_p95', 't_hot_area_pct',
+            't_hot_largest_blob_pct', 't_grad_mean', 't_grad_std',
+            't_diff_mean', 't_diff_std', 'flow_mag_mean', 'flow_mag_std',
+            'tproxy_val', 'tproxy_delta', 'tproxy_vel'
+        ]
+        
+        # Previous frame for temporal calculations
+        self.previous_frame = None
+        self.frame_history = []
     
     def validate_config(self) -> None:
         """
-        Validate the configuration parameters.
+        Validate the configuration parameters for FLIR Lepton 3.5.
         
         Raises:
             ValueError: If configuration is invalid
         """
-        # Check required parameters
-        required_params = ['max_temperature_threshold', 'hotspot_threshold']
-        for param in required_params:
-            if param not in self.config:
-                raise ValueError(f"Missing required configuration parameter: {param}")
+        # Set default values for FLIR Lepton 3.5 parameters
+        if 'hot_temperature_threshold' not in self.config:
+            self.config['hot_temperature_threshold'] = 50.0  # Celsius
         
-        # Set default values for optional parameters
-        if 'regions_of_interest' not in self.config:
-            self.config['regions_of_interest'] = None
+        if 'gradient_kernel_size' not in self.config:
+            self.config['gradient_kernel_size'] = 3
         
-        if 'entropy_bins' not in self.config:
-            self.config['entropy_bins'] = 32
+        if 'percentile_threshold' not in self.config:
+            self.config['percentile_threshold'] = 95
         
-        if 'motion_threshold' not in self.config:
-            self.config['motion_threshold'] = 5.0
+        if 'flow_history_length' not in self.config:
+            self.config['flow_history_length'] = 3
+        
+        if 'temperature_proxy_alpha' not in self.config:
+            self.config['temperature_proxy_alpha'] = 0.8
     
     def extract_features(self, data: Union[Dict[str, Any], pd.DataFrame]) -> Dict[str, Any]:
         """
-        Extract features from thermal data.
+        Extract FLIR Lepton 3.5 thermal features from thermal data.
         
         Args:
             data: Input thermal data, either as a dictionary or DataFrame
             
         Returns:
-            Dictionary containing the extracted features
+            Dictionary containing the 15 FLIR-specific thermal features
         """
-        self.logger.info("Extracting thermal features")
+        self.logger.info("Extracting FLIR Lepton 3.5 thermal features")
         
-        # Check if data is a dictionary or DataFrame
+        # Handle both DataFrame and dictionary input
         if isinstance(data, pd.DataFrame):
-            # Convert DataFrame to dictionary
-            data_dict = {
-                'timestamps': data['timestamp'].tolist(),
-                'frames': [row['frame'] for _, row in data.iterrows()]
-            }
+            if 'thermal_frame' in data.columns:
+                thermal_frame = data['thermal_frame'].iloc[-1]  # Get latest frame
+            elif 'frame' in data.columns:
+                thermal_frame = data['frame'].iloc[-1]
+            else:
+                raise ValueError("No thermal frame data found in DataFrame")
         else:
-            data_dict = data
+            # Handle dictionary input
+            if 'thermal_frame' in data:
+                thermal_frame = data['thermal_frame']
+            elif 'frames' in data and data['frames']:
+                thermal_frame = data['frames'][-1]  # Get latest frame
+            else:
+                raise ValueError("No thermal frame data found in input")
         
-        # Extract frames and timestamps
-        frames = data_dict.get('frames', [])
-        timestamps = data_dict.get('timestamps', [])
+        # Convert to numpy array if needed
+        if not isinstance(thermal_frame, np.ndarray):
+            thermal_frame = np.array(thermal_frame)
         
-        if not frames:
-            self.logger.warning("No thermal frames found in data")
-            return {}
+        # Ensure frame is 2D
+        if thermal_frame.ndim != 2:
+            raise ValueError(f"Expected 2D thermal frame, got {thermal_frame.ndim}D")
         
-        # Convert frames to numpy arrays if they're not already
-        frames = [np.array(frame) if not isinstance(frame, np.ndarray) else frame for frame in frames]
+        # Extract all 15 FLIR Lepton 3.5 features
+        features = {}
         
-        # Extract features
-        features = {
-            'extraction_time': datetime.now().isoformat(),
-            'frame_count': len(frames),
-            'frame_shape': frames[0].shape if frames else None,
-            'temperature_statistics': self._extract_temperature_statistics(frames),
-            'hotspot_features': self._extract_hotspot_features(frames),
-            'entropy_features': self._extract_entropy_features(frames),
-            'motion_features': self._extract_motion_features(frames),
-            'temperature_rise_features': self._extract_temperature_rise_features(frames, timestamps)
-        }
+        # Basic temperature statistics
+        features['t_mean'] = float(np.mean(thermal_frame))
+        features['t_std'] = float(np.std(thermal_frame))
+        features['t_max'] = float(np.max(thermal_frame))
+        features['t_p95'] = float(np.percentile(thermal_frame, self.config['percentile_threshold']))
         
-        self.logger.info(f"Extracted {len(features)} thermal feature groups")
+        # Hot area features
+        hot_threshold = self.config['hot_temperature_threshold']
+        hot_mask = thermal_frame > hot_threshold
+        total_pixels = thermal_frame.size
+        hot_pixels = np.sum(hot_mask)
+        features['t_hot_area_pct'] = float(hot_pixels / total_pixels * 100.0)
+        
+        # Largest hot blob percentage
+        features['t_hot_largest_blob_pct'] = self._calculate_largest_blob_percentage(hot_mask)
+        
+        # Temperature gradient features
+        grad_features = self._calculate_gradient_features(thermal_frame)
+        features['t_grad_mean'] = grad_features['mean']
+        features['t_grad_std'] = grad_features['std']
+        
+        # Temporal difference features (requires previous frame)
+        diff_features = self._calculate_temporal_difference_features(thermal_frame)
+        features['t_diff_mean'] = diff_features['mean']
+        features['t_diff_std'] = diff_features['std']
+        
+        # Optical flow features (requires previous frame)
+        flow_features = self._calculate_optical_flow_features(thermal_frame)
+        features['flow_mag_mean'] = flow_features['mean']
+        features['flow_mag_std'] = flow_features['std']
+        
+        # Temperature proxy features
+        proxy_features = self._calculate_temperature_proxy_features(thermal_frame)
+        features['tproxy_val'] = proxy_features['val']
+        features['tproxy_delta'] = proxy_features['delta']
+        features['tproxy_vel'] = proxy_features['vel']
+        
+        # Update frame history
+        self.previous_frame = thermal_frame.copy()
+        self.frame_history.append(thermal_frame.copy())
+        
+        # Keep only recent frames for efficiency
+        max_history = self.config.get('flow_history_length', 3)
+        if len(self.frame_history) > max_history:
+            self.frame_history = self.frame_history[-max_history:]
+        
+        # Add metadata
+        features['extraction_time'] = datetime.now().isoformat()
+        features['frame_shape'] = thermal_frame.shape
+        
+        self.logger.info(f"Extracted {len(self.flir_features)} FLIR thermal features")
         return features
     
     def to_dataframe(self, features: Dict[str, Any]) -> pd.DataFrame:
         """
-        Convert extracted features to a pandas DataFrame.
+        Convert FLIR Lepton 3.5 thermal features to a pandas DataFrame.
         
         Args:
-            features: Extracted features from the extract_features method
+            features: Extracted FLIR features from the extract_features method
             
         Returns:
-            DataFrame containing the features in a structured format
+            DataFrame containing the 15 thermal features in a single row
         """
-        # Flatten the nested feature dictionary
-        flat_features = {}
-        
-        # Add temperature statistics
-        temp_stats = features.get('temperature_statistics', {})
-        for stat_name, stat_values in temp_stats.items():
-            if isinstance(stat_values, list):
-                for i, value in enumerate(stat_values):
-                    flat_features[f"temp_{stat_name}_{i}"] = value
+        # Create DataFrame with FLIR features only
+        flir_data = {}
+        for feature_name in self.flir_features:
+            if feature_name in features:
+                flir_data[feature_name] = features[feature_name]
             else:
-                flat_features[f"temp_{stat_name}"] = stat_values
-        
-        # Add hotspot features
-        hotspot_features = features.get('hotspot_features', {})
-        for feature_name, feature_values in hotspot_features.items():
-            if isinstance(feature_values, list):
-                for i, value in enumerate(feature_values):
-                    flat_features[f"hotspot_{feature_name}_{i}"] = value
-            else:
-                flat_features[f"hotspot_{feature_name}"] = feature_values
-        
-        # Add entropy features
-        entropy_features = features.get('entropy_features', {})
-        for feature_name, feature_values in entropy_features.items():
-            if isinstance(feature_values, list):
-                for i, value in enumerate(feature_values):
-                    flat_features[f"entropy_{feature_name}_{i}"] = value
-            else:
-                flat_features[f"entropy_{feature_name}"] = feature_values
-        
-        # Add motion features
-        motion_features = features.get('motion_features', {})
-        for feature_name, feature_values in motion_features.items():
-            if isinstance(feature_values, list):
-                for i, value in enumerate(feature_values):
-                    flat_features[f"motion_{feature_name}_{i}"] = value
-            else:
-                flat_features[f"motion_{feature_name}"] = feature_values
-        
-        # Add temperature rise features
-        rise_features = features.get('temperature_rise_features', {})
-        for feature_name, feature_values in rise_features.items():
-            if isinstance(feature_values, list):
-                for i, value in enumerate(feature_values):
-                    flat_features[f"rise_{feature_name}_{i}"] = value
-            else:
-                flat_features[f"rise_{feature_name}"] = feature_values
+                flir_data[feature_name] = 0.0  # Default value if missing
         
         # Create DataFrame with a single row
-        df = pd.DataFrame([flat_features])
+        df = pd.DataFrame([flir_data])
         
         return df
     
@@ -199,34 +226,16 @@ class BasicThermalFeatureExtractor(ThermalFeatureExtractor):
     
     def get_feature_names(self) -> List[str]:
         """
-        Get the names of all features extracted by this extractor.
+        Get the names of all FLIR Lepton 3.5 thermal features.
         
         Returns:
-            List of feature names
+            List of the 15 FLIR-specific feature names
         """
-        return [
-            'temperature_statistics.max_temperature',
-            'temperature_statistics.mean_temperature',
-            'temperature_statistics.min_temperature',
-            'temperature_statistics.temperature_range',
-            'temperature_statistics.temperature_std',
-            'hotspot_features.hotspot_count',
-            'hotspot_features.hotspot_area_percentage',
-            'hotspot_features.max_hotspot_area',
-            'hotspot_features.max_hotspot_temperature',
-            'entropy_features.temperature_entropy',
-            'entropy_features.entropy_change',
-            'motion_features.motion_detected',
-            'motion_features.motion_area_percentage',
-            'motion_features.motion_intensity',
-            'temperature_rise_features.max_temperature_slope',
-            'temperature_rise_features.mean_temperature_slope',
-            'temperature_rise_features.max_temperature_acceleration'
-        ]
+        return self.flir_features.copy()
     
     def extract_temperature_statistics(self, 
                                      thermal_frame: np.ndarray,
-                                     regions: Optional[List[Tuple[int, int, int, int]]] = None) -> Dict[str, float]:
+                                     regions: Optional[List[Tuple[int, int, int, int]]] = None) -> Dict[str, Any]:
         """
         Extract temperature statistics from a thermal frame.
         
@@ -548,4 +557,186 @@ class BasicThermalFeatureExtractor(ThermalFeatureExtractor):
             'temperature_slopes': temp_slopes,
             'max_temperature_acceleration': float(np.max(temp_accelerations)) if temp_accelerations else 0.0,
             'temperature_accelerations': temp_accelerations
+        }
+    
+    def _calculate_largest_blob_percentage(self, binary_mask: np.ndarray) -> float:
+        """
+        Calculate the percentage of the largest connected blob in a binary mask.
+        
+        Args:
+            binary_mask: Binary mask where True indicates hot pixels
+            
+        Returns:
+            Percentage of the largest blob relative to total frame size
+        """
+        if not np.any(binary_mask):
+            return 0.0
+        
+        # Label connected components
+        labeled_mask, num_labels = ndimage.label(binary_mask)
+        
+        if num_labels == 0:
+            return 0.0
+        
+        # Find the largest blob
+        blob_sizes = [np.sum(labeled_mask == i) for i in range(1, num_labels + 1)]
+        largest_blob_size = max(blob_sizes)
+        
+        # Calculate percentage
+        total_pixels = binary_mask.size
+        return float(largest_blob_size / total_pixels * 100.0)
+    
+    def _calculate_gradient_features(self, thermal_frame: np.ndarray) -> Dict[str, float]:
+        """
+        Calculate temperature gradient features using Sobel operators.
+        
+        Args:
+            thermal_frame: 2D thermal frame
+            
+        Returns:
+            Dictionary with gradient mean and standard deviation
+        """
+        # Calculate gradients using Sobel operators
+        grad_x = ndimage.sobel(thermal_frame, axis=1)
+        grad_y = ndimage.sobel(thermal_frame, axis=0)
+        
+        # Calculate gradient magnitude
+        gradient_magnitude = np.sqrt(grad_x**2 + grad_y**2)
+        
+        return {
+            'mean': float(np.mean(gradient_magnitude)),
+            'std': float(np.std(gradient_magnitude))
+        }
+    
+    def _calculate_temporal_difference_features(self, thermal_frame: np.ndarray) -> Dict[str, float]:
+        """
+        Calculate temporal difference features between current and previous frame.
+        
+        Args:
+            thermal_frame: Current thermal frame
+            
+        Returns:
+            Dictionary with temporal difference mean and standard deviation
+        """
+        if self.previous_frame is None:
+            # No previous frame available
+            return {'mean': 0.0, 'std': 0.0}
+        
+        # Ensure frames have the same shape
+        if thermal_frame.shape != self.previous_frame.shape:
+            self.logger.warning("Frame shape mismatch for temporal difference calculation")
+            return {'mean': 0.0, 'std': 0.0}
+        
+        # Calculate temporal difference
+        temp_diff = thermal_frame.astype(float) - self.previous_frame.astype(float)
+        
+        return {
+            'mean': float(np.mean(np.abs(temp_diff))),
+            'std': float(np.std(temp_diff))
+        }
+    
+    def _calculate_optical_flow_features(self, thermal_frame: np.ndarray) -> Dict[str, float]:
+        """
+        Calculate optical flow features using Farneback dense optical flow.
+        
+        Args:
+            thermal_frame: Current thermal frame
+            
+        Returns:
+            Dictionary with flow magnitude mean and standard deviation
+        """
+        if self.previous_frame is None or not CV2_AVAILABLE:
+            # No previous frame or OpenCV not available
+            return {'mean': 0.0, 'std': 0.0}
+        
+        try:
+            # Convert frames to uint8 for OpenCV
+            current_gray = ((thermal_frame - thermal_frame.min()) / 
+                          (thermal_frame.max() - thermal_frame.min() + 1e-8) * 255).astype(np.uint8)
+            previous_gray = ((self.previous_frame - self.previous_frame.min()) / 
+                           (self.previous_frame.max() - self.previous_frame.min() + 1e-8) * 255).astype(np.uint8)
+            
+            # Calculate dense optical flow using Farneback method
+            flow = cv2.calcOpticalFlowPyrLK(previous_gray, current_gray, 
+                                          pyr_scale=0.5, levels=3, winsize=15, 
+                                          iterations=3, poly_n=5, poly_sigma=1.2, flags=0)
+            
+            if flow is not None and flow.size > 0:
+                # Calculate flow magnitude
+                flow_magnitude = np.sqrt(flow[..., 0]**2 + flow[..., 1]**2)
+                
+                return {
+                    'mean': float(np.mean(flow_magnitude)),
+                    'std': float(np.std(flow_magnitude))
+                }
+            else:
+                return {'mean': 0.0, 'std': 0.0}
+                
+        except Exception as e:
+            self.logger.warning(f"Optical flow calculation failed: {e}")
+            # Fallback to simple frame difference for flow estimation
+            try:
+                frame_diff = np.abs(thermal_frame.astype(float) - self.previous_frame.astype(float))
+                return {
+                    'mean': float(np.mean(frame_diff)),
+                    'std': float(np.std(frame_diff))
+                }
+            except:
+                return {'mean': 0.0, 'std': 0.0}
+    
+    def _calculate_temperature_proxy_features(self, thermal_frame: np.ndarray) -> Dict[str, float]:
+        """
+        Calculate temperature proxy features for trend analysis.
+        
+        Args:
+            thermal_frame: Current thermal frame
+            
+        Returns:
+            Dictionary with proxy value, delta, and velocity
+        """
+        # Calculate current proxy value (weighted mean of hottest regions)
+        alpha = self.config.get('temperature_proxy_alpha', 0.8)
+        
+        # Get top percentile temperatures for proxy calculation
+        top_percentile = np.percentile(thermal_frame, 90)
+        hot_pixels = thermal_frame[thermal_frame >= top_percentile]
+        
+        if len(hot_pixels) > 0:
+            current_proxy = float(np.mean(hot_pixels))
+        else:
+            current_proxy = float(np.mean(thermal_frame))
+        
+        # Initialize tracking variables if not exist
+        if not hasattr(self, '_proxy_history'):
+            self._proxy_history = []
+            self._proxy_smoothed = current_proxy
+        
+        # Update smoothed proxy value (exponential moving average)
+        self._proxy_smoothed = alpha * current_proxy + (1 - alpha) * self._proxy_smoothed
+        
+        # Calculate delta (change from previous)
+        if self._proxy_history:
+            proxy_delta = current_proxy - self._proxy_history[-1]
+        else:
+            proxy_delta = 0.0
+        
+        # Calculate velocity (rate of change)
+        if len(self._proxy_history) >= 2:
+            # Use last two values for velocity calculation
+            proxy_vel = self._proxy_history[-1] - self._proxy_history[-2]
+        else:
+            proxy_vel = 0.0
+        
+        # Update history
+        self._proxy_history.append(current_proxy)
+        
+        # Keep only recent history for efficiency
+        max_history = 10
+        if len(self._proxy_history) > max_history:
+            self._proxy_history = self._proxy_history[-max_history:]
+        
+        return {
+            'val': float(self._proxy_smoothed),
+            'delta': float(proxy_delta),
+            'vel': float(proxy_vel)
         }

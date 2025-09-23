@@ -1,152 +1,169 @@
-# Base configuration for the synthetic fire prediction system
+# Base configuration for the FLIR Lepton 3.5 + SCD41 CO₂ Fire Detection System
 
 # System configuration
 system:
-  name: "Synthetic Fire Prediction System"
-  version: "0.1.0"
+  name: "FLIR SCD41 Fire Detection System"
+  version: "0.2.0"
   log_level: "INFO"
-  data_dir: "data"
+  data_dir: "iot_data"
   models_dir: "models"
 
-# Hardware configuration
+# Hardware configuration for FLIR Lepton 3.5 + SCD41 sensors
 hardware:
   thermal_sensors:
-    thermal_sensor_1:
-      width: 384
-      height: 288
-      min_temp: 0.0
-      max_temp: 500.0
+    flir_lepton_3_5:
+      width: 160
+      height: 120
+      min_temp: -10.0
+      max_temp: 150.0
       ambient_temp: 25.0
-      noise_level: 1.0
+      noise_level: 0.5
+      sensor_type: "flir_lepton_3_5"
+      frame_rate: 9.0  # Hz
   
   gas_sensors:
-    gas_sensor_1:
-      supported_gases: ["methane", "propane", "hydrogen"]
-      methane_baseline: 0.0
-      methane_threshold: 100.0
-      propane_baseline: 0.0
-      propane_threshold: 100.0
-      hydrogen_baseline: 0.0
-      hydrogen_threshold: 100.0
-  
-  environmental_sensors:
-    env_sensor_1:
-      base_temperature: 25.0
-      base_humidity: 50.0
-      base_pressure: 1013.25
-      supported_vocs: ["benzene", "formaldehyde", "toluene"]
-      benzene_base: 0.1
-      formaldehyde_base: 0.1
-      toluene_base: 0.1
+    sensirion_scd41:
+      sensor_type: "sensirion_scd41"
+      measurement_range: [400, 40000]  # ppm CO₂
+      sampling_rate: 0.2  # Every 5 seconds
+      co2_baseline: 450.0
+      co2_threshold: 1000.0
 
-# Data generation configuration
+# Data generation configuration for FLIR+SCD41
 data_generation:
   thermal:
-    resolution: [384, 288]
-    frame_rate: 10  # frames per second
-    temperature_range: [0, 500]  # degrees Celsius
+    resolution: [160, 120]  # FLIR Lepton 3.5 resolution
+    frame_rate: 9.0  # Hz
+    temperature_range: [-10, 150]  # degrees Celsius
   
   gas:
-    sample_rate: 1.0  # Hz
-    gases: ["methane", "propane", "hydrogen"]
-  
-  environmental:
-    sample_rate: 1.0  # Hz
-    parameters: ["temperature", "humidity", "pressure"]
-    vocs: ["benzene", "formaldehyde", "toluene"]
+    sample_rate: 0.2  # Every 5 seconds
+    gases: ["co2"]
+    co2_range: [400, 40000]  # ppm
   
   scenarios:
     normal_duration: 3600  # seconds
     fire_duration: 600  # seconds
     types: ["normal", "electrical_fire", "chemical_fire", "smoldering_fire", "rapid_combustion"]
 
-# Feature engineering configuration
+# Feature engineering configuration for FLIR+SCD41 (18 total features)
 feature_engineering:
+  # FLIR Lepton 3.5 thermal features (15 features)
   thermal:
-    max_temperature: true
-    mean_temperature: true
-    hotspot_area_percentage: true
-    temperature_rise_slope: true
-    entropy: true
+    features:
+      - t_mean        # Mean temperature
+      - t_std         # Temperature standard deviation
+      - t_max         # Maximum temperature
+      - t_p95         # 95th percentile temperature
+      - t_hot_area_pct  # Percentage of hot area
+      - t_hot_largest_blob_pct  # Largest hot blob percentage
+      - t_grad_mean   # Mean temperature gradient
+      - t_grad_std    # Standard deviation of temperature gradient
+      - t_diff_mean   # Mean temperature difference between frames
+      - t_diff_std    # Standard deviation of temperature difference
+      - flow_mag_mean # Mean optical flow magnitude
+      - flow_mag_std  # Standard deviation of optical flow magnitude
+      - tproxy_val    # Temperature proxy value
+      - tproxy_delta  # Temperature proxy delta
+      - tproxy_vel    # Temperature proxy velocity
+    feature_count: 15
   
+  # SCD41 CO₂ gas features (3 features)
   gas:
-    concentration_slope: true
-    peak_detection: true
-    exceedance_tracking: true
-    z_score_anomaly: true
+    features:
+      - gas_val       # Current CO₂ concentration (ppm)
+      - gas_delta     # Change from previous reading
+      - gas_vel       # Rate of change (same as delta)
+    feature_count: 3
   
-  environmental:
-    voc_slope: true
-    dew_point: true
-    anomaly_detection: true
-  
+  # Feature fusion configuration
   fusion:
-    hotspot_gas_concurrence: true
-    cross_sensor_correlation: true
-    risk_score_weights:
-      thermal: 0.4
-      gas: 0.4
-      environmental: 0.2
+    enabled: true
+    method: "concatenation"
+    feature_count: 18  # 15 thermal + 3 gas
 
-# Model configuration
+# Model configuration for 18-feature input
 models:
+  input_features: 18  # 15 thermal + 3 gas features
+  thermal_feature_count: 15
+  gas_feature_count: 3
+  
   baseline:
     type: "random_forest"
-    n_estimators: 100
-    max_depth: 10
+    n_estimators: 200
+    max_depth: 15
+    class_weight: "balanced"
     random_state: 42
   
   temporal:
     type: "lstm"
+    input_size: 18
     hidden_size: 64
     num_layers: 2
     dropout: 0.2
     sequence_length: 30
+    bidirectional: true
   
   ensemble:
     models: ["baseline", "temporal"]
-    weights: [0.5, 0.5]
+    weights: [0.6, 0.4]  # Weight thermal more heavily
     voting: "soft"
+    strategy: "weighted_voting"
 
-# Agent configuration
+# Agent configuration for FLIR+SCD41
 agents:
   monitoring:
-    anomaly_threshold: 0.8
-    baseline_update_interval: 3600  # seconds
+    update_interval: 1.0  # seconds
+    anomaly_threshold: 0.7
+    health_check_interval: 30  # seconds
   
   analysis:
     confidence_threshold: 0.7
-    historical_window: 3600  # seconds
+    thermal_thresholds:
+      t_max: 60.0      # °C
+      t_hot_area_pct: 10.0  # %
+      tproxy_vel: 2.0   # Rate of change
+    gas_thresholds:
+      gas_val: 1000.0   # ppm CO₂
+      gas_delta: 50.0   # ppm change
+      gas_vel: 50.0     # Rate of change
+    fire_pattern:
+      enable_correlation_analysis: true
+      enable_trend_analysis: true
   
   response:
     risk_levels: 5
-    alert_thresholds: [0.2, 0.4, 0.6, 0.8]
+    alert_thresholds: [0.3, 0.5, 0.7, 0.85]
+    escalation_intervals: [30, 60, 120]  # seconds
   
   learning:
     performance_metrics: ["accuracy", "precision", "recall", "f1"]
-    retraining_interval: 86400  # seconds
+    retraining_interval: 86400  # seconds (24 hours)
 
-# AWS configuration
+# AWS configuration for IoT
 aws:
   region: "us-west-2"
   profile: "default"
   
   s3:
-    default_bucket: "synthetic-fire-prediction-data"
-    model_bucket: "synthetic-fire-prediction-models"
+    default_bucket: "flir-scd41-fire-detection-data"
+    model_bucket: "flir-scd41-fire-detection-models"
   
   sagemaker:
     role_arn: "arn:aws:iam::123456789012:role/SageMakerExecutionRole"
     instance_type: "ml.m5.large"
   
+  iot:
+    thing_name: "flir-scd41-fire-detector"
+  
   lambda:
-    alert_function: "synthetic-fire-prediction-alert"
+    alert_function: "flir-scd41-fire-alert"
   
   cloudwatch:
-    log_group: "synthetic-fire-prediction-logs"
-    metrics_namespace: "SyntheticFirePrediction"
+    log_group: "flir-scd41-fire-detection-logs"
+    metrics_namespace: "FLIRSCD41FireDetection"
 
 # Secrets configuration
 secrets:
   use_aws_secrets_manager: false
-  secrets_file: "config/secrets/secrets.json"
+  secrets_file: "config/secrets/iot_secrets.json"

@@ -32,7 +32,7 @@ class ValidationFramework:
     def __init__(self, config: Dict[str, Any] = None):
         """Initialize validation framework."""
         self.config = config or {}
-        self.test_scenarios = self._create_test_scenarios()
+        self.test_scenarios = self._create_flir_scd41_test_scenarios()
         self.results = {}
         self.temp_dir = None
     
@@ -60,52 +60,104 @@ class ValidationFramework:
             if self.temp_dir and os.path.exists(self.temp_dir):
                 shutil.rmtree(self.temp_dir)
     
-    def _create_test_scenarios(self) -> List[Dict[str, Any]]:
-        """Create comprehensive test scenarios."""
+    def _create_flir_scd41_test_scenarios(self) -> List[Dict[str, Any]]:
+        """Create comprehensive test scenarios for FLIR + SCD41 sensors."""
         return [
-            # Normal conditions
+            # Normal conditions - FLIR + SCD41 format
             {
-                'name': 'normal_conditions',
+                'name': 'normal_conditions_flir_scd41',
                 'data': {
-                    'thermal': {'s1': {'temperature_max': 22.0, 'temperature_avg': 20.0, 'hotspot_count': 0}},
-                    'gas': {'s1': {'co_concentration': 5.0, 'smoke_density': 8.0}},
-                    'environmental': {'s1': {'temperature': 21.0, 'humidity': 45.0}}
+                    'flir': {
+                        'flir_lepton35': {
+                            't_mean': 22.0, 't_std': 2.0, 't_max': 25.0, 't_p95': 24.0,
+                            't_hot_area_pct': 0.5, 't_hot_largest_blob_pct': 0.1,
+                            't_grad_mean': 1.0, 't_grad_std': 0.5, 't_diff_mean': 0.1,
+                            't_diff_std': 0.05, 'flow_mag_mean': 0.2, 'flow_mag_std': 0.1,
+                            'tproxy_val': 25.0, 'tproxy_delta': 0.1, 'tproxy_vel': 0.05
+                        }
+                    },
+                    'scd41': {
+                        'scd41_co2': {
+                            'gas_val': 450.0,  # Normal indoor CO₂
+                            'gas_delta': 0.0,   # No change
+                            'gas_vel': 0.0      # No velocity
+                        }
+                    }
                 },
                 'expected_fire': False,
                 'min_confidence': 0.0
             },
-            # High confidence fire
+            # High confidence fire - FLIR + SCD41 format
             {
-                'name': 'high_confidence_fire',
+                'name': 'high_confidence_fire_flir_scd41',
                 'data': {
-                    'thermal': {'s1': {'temperature_max': 85.0, 'temperature_avg': 65.0, 'hotspot_count': 8}},
-                    'gas': {'s1': {'co_concentration': 60.0, 'smoke_density': 85.0}},
-                    'environmental': {'s1': {'temperature': 35.0, 'humidity': 25.0}}
+                    'flir': {
+                        'flir_lepton35': {
+                            't_mean': 55.0, 't_std': 15.0, 't_max': 85.0, 't_p95': 75.0,
+                            't_hot_area_pct': 25.0, 't_hot_largest_blob_pct': 15.0,
+                            't_grad_mean': 8.0, 't_grad_std': 3.0, 't_diff_mean': 5.0,
+                            't_diff_std': 2.0, 'flow_mag_mean': 4.0, 'flow_mag_std': 1.5,
+                            'tproxy_val': 80.0, 'tproxy_delta': 25.0, 'tproxy_vel': 12.0
+                        }
+                    },
+                    'scd41': {
+                        'scd41_co2': {
+                            'gas_val': 1500.0,  # Elevated CO₂
+                            'gas_delta': 300.0,  # Rapid increase
+                            'gas_vel': 150.0    # High velocity
+                        }
+                    }
                 },
                 'expected_fire': True,
-                'min_confidence': 0.7
+                'min_confidence': 0.8
             },
-            # Medium confidence fire
+            # Medium confidence fire - FLIR + SCD41 format
             {
-                'name': 'medium_fire',
+                'name': 'medium_fire_flir_scd41',
                 'data': {
-                    'thermal': {'s1': {'temperature_max': 55.0, 'temperature_avg': 42.0, 'hotspot_count': 3}},
-                    'gas': {'s1': {'co_concentration': 35.0, 'smoke_density': 45.0}},
-                    'environmental': {'s1': {'temperature': 28.0, 'humidity': 35.0}}
+                    'flir': {
+                        'flir_lepton35': {
+                            't_mean': 35.0, 't_std': 8.0, 't_max': 65.0, 't_p95': 55.0,
+                            't_hot_area_pct': 10.0, 't_hot_largest_blob_pct': 5.0,
+                            't_grad_mean': 4.0, 't_grad_std': 1.5, 't_diff_mean': 2.0,
+                            't_diff_std': 1.0, 'flow_mag_mean': 2.0, 'flow_mag_std': 0.8,
+                            'tproxy_val': 55.0, 'tproxy_delta': 10.0, 'tproxy_vel': 5.0
+                        }
+                    },
+                    'scd41': {
+                        'scd41_co2': {
+                            'gas_val': 1000.0,  # Elevated CO₂
+                            'gas_delta': 100.0,  # Moderate increase
+                            'gas_vel': 50.0     # Moderate velocity
+                        }
+                    }
                 },
                 'expected_fire': True,
-                'min_confidence': 0.4
+                'min_confidence': 0.5
             },
-            # Edge case: extreme heat but no fire
+            # Edge case: high CO₂ but normal thermal
             {
-                'name': 'extreme_heat_no_fire',
+                'name': 'high_co2_normal_thermal',
                 'data': {
-                    'thermal': {'s1': {'temperature_max': 95.0, 'temperature_avg': 90.0, 'hotspot_count': 0}},
-                    'gas': {'s1': {'co_concentration': 5.0, 'smoke_density': 8.0}},
-                    'environmental': {'s1': {'temperature': 45.0, 'humidity': 15.0}}
+                    'flir': {
+                        'flir_lepton35': {
+                            't_mean': 22.0, 't_std': 2.0, 't_max': 25.0, 't_p95': 24.0,
+                            't_hot_area_pct': 0.5, 't_hot_largest_blob_pct': 0.1,
+                            't_grad_mean': 1.0, 't_grad_std': 0.5, 't_diff_mean': 0.1,
+                            't_diff_std': 0.05, 'flow_mag_mean': 0.2, 'flow_mag_std': 0.1,
+                            'tproxy_val': 25.0, 'tproxy_delta': 0.1, 'tproxy_vel': 0.05
+                        }
+                    },
+                    'scd41': {
+                        'scd41_co2': {
+                            'gas_val': 2500.0,  # High CO₂ (could indicate smoldering)
+                            'gas_delta': 500.0,  # Significant increase
+                            'gas_vel': 100.0    # High velocity
+                        }
+                    }
                 },
-                'expected_fire': False,
-                'min_confidence': 0.0
+                'expected_fire': True,  # Smoldering fire indication
+                'min_confidence': 0.6
             }
         ]
     
@@ -180,7 +232,7 @@ class ValidationFramework:
             
             # Run 100 processing cycles
             for _ in range(100):
-                test_data = self._generate_random_data()
+                test_data = self._generate_flir_scd41_random_data()
                 
                 start_time = time.time()
                 system.process_data(test_data)
@@ -272,7 +324,7 @@ class ValidationFramework:
             
             # Concurrent processing test
             def process_request():
-                return system.process_data(self._generate_random_data())
+                return system.process_data(self._generate_flir_scd41_random_data())
             
             start_time = time.time()
             with ThreadPoolExecutor(max_workers=5) as executor:
@@ -346,26 +398,33 @@ class ValidationFramework:
         except Exception as e:
             return {'status': 'error', 'error': str(e)}
     
-    def _generate_random_data(self) -> Dict[str, Any]:
-        """Generate random sensor data for testing."""
+    def _generate_flir_scd41_random_data(self) -> Dict[str, Any]:
+        """Generate random FLIR + SCD41 sensor data for testing."""
         return {
-            'thermal': {
-                'sensor1': {
-                    'temperature_max': 20.0 + np.random.normal(0, 10),
-                    'temperature_avg': 18.0 + np.random.normal(0, 8),
-                    'hotspot_count': max(0, int(np.random.normal(1, 2)))
+            'flir': {
+                'flir_lepton35': {
+                    't_mean': np.random.normal(22.0, 5.0),
+                    't_std': np.random.normal(3.0, 1.0),
+                    't_max': np.random.normal(25.0, 10.0),
+                    't_p95': np.random.normal(24.0, 8.0),
+                    't_hot_area_pct': np.random.exponential(2.0),
+                    't_hot_largest_blob_pct': np.random.exponential(1.0),
+                    't_grad_mean': np.random.normal(1.0, 0.5),
+                    't_grad_std': np.random.normal(0.5, 0.2),
+                    't_diff_mean': np.random.normal(0.1, 0.1),
+                    't_diff_std': np.random.normal(0.1, 0.05),
+                    'flow_mag_mean': np.random.normal(0.5, 0.2),
+                    'flow_mag_std': np.random.normal(0.3, 0.1),
+                    'tproxy_val': np.random.normal(25.0, 5.0),
+                    'tproxy_delta': np.random.normal(0.1, 0.5),
+                    'tproxy_vel': np.random.normal(0.05, 0.2)
                 }
             },
-            'gas': {
-                'sensor1': {
-                    'co_concentration': max(0, 5.0 + np.random.normal(0, 10)),
-                    'smoke_density': max(0, 10.0 + np.random.normal(0, 15))
-                }
-            },
-            'environmental': {
-                'sensor1': {
-                    'temperature': 20.0 + np.random.normal(0, 5),
-                    'humidity': max(0, min(100, 50.0 + np.random.normal(0, 15)))
+            'scd41': {
+                'scd41_co2': {
+                    'gas_val': np.random.normal(450.0, 100.0),    # Normal indoor CO₂
+                    'gas_delta': np.random.normal(0.0, 20.0),     # Small changes
+                    'gas_vel': np.random.normal(0.0, 20.0)        # Same as delta
                 }
             }
         }

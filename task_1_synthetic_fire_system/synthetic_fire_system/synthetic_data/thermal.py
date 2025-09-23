@@ -1,1 +1,0 @@
-# Placeholder for thermal data generation components

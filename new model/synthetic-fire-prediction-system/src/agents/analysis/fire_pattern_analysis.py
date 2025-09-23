@@ -6,7 +6,6 @@ to provide accurate fire detection and classification results.
 """
 
 import numpy as np
-import pandas as pd
 import logging
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
@@ -85,8 +84,8 @@ class FirePatternAnalysisAgent(AnalysisAgent):
             analysis_timestamp = datetime.now()
             
             # Extract sensor data components
-            thermal_data = data.get('thermal', {})
-            gas_data = data.get('gas', {})
+            thermal_data = data.get('thermal_features', data.get('thermal', {}))
+            gas_data = data.get('gas_features', data.get('gas', {}))
             environmental_data = data.get('environmental', {})
             
             # Perform pattern analysis
@@ -294,41 +293,67 @@ class FirePatternAnalysisAgent(AnalysisAgent):
         }
     
     def _analyze_thermal_patterns(self, thermal_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze thermal patterns in the data."""
-        # Extract thermal features
-        temp_max = thermal_data.get('temperature_max', 0.0)
-        temp_avg = thermal_data.get('temperature_avg', 0.0)
-        hotspot_count = thermal_data.get('hotspot_count', 0)
+        """Analyze thermal patterns in the data using FLIR Lepton 3.5 features."""
+        # Extract FLIR thermal features
+        t_max = thermal_data.get('t_max', 0.0)
+        t_mean = thermal_data.get('t_mean', 0.0)
+        t_hot_area_pct = thermal_data.get('t_hot_area_pct', 0.0)
+        t_grad_mean = thermal_data.get('t_grad_mean', 0.0)
+        flow_mag_mean = thermal_data.get('flow_mag_mean', 0.0)
+        tproxy_val = thermal_data.get('tproxy_val', 0.0)
+        tproxy_delta = thermal_data.get('tproxy_delta', 0.0)
         
-        # Calculate pattern scores
-        gradient_score = min(1.0, (temp_max - temp_avg) / 50.0) if temp_avg > 0 else 0.0
-        hotspot_score = min(1.0, hotspot_count / 10.0)
-        spread_score = thermal_data.get('thermal_spread_rate', 0.0)
+        # Calculate pattern scores based on FLIR features
+        # Temperature gradient and spread analysis
+        gradient_score = min(1.0, (t_max - t_mean) / 50.0) if t_mean > 0 else 0.0
+        
+        # Hot area percentage analysis (critical fire indicator)
+        hotspot_score = min(1.0, t_hot_area_pct / 20.0)  # Normalize to 20% reference
+        
+        # Motion/flow analysis
+        spread_score = min(1.0, flow_mag_mean / 2.0)  # Normalize to 2.0 reference
+        
+        # Temperature proxy trend analysis
+        trend_score = min(1.0, abs(tproxy_delta) / 5.0)  # Normalize to 5°C change reference
+        
+        # Temperature proxy value (absolute temperature indicator)
+        proxy_value_score = min(1.0, max(0.0, (tproxy_val - 30.0) / 50.0))  # Reference 30°C baseline
         
         return {
             'gradient_score': gradient_score,
             'hotspot_score': hotspot_score,
             'spread_score': spread_score,
-            'confidence': statistics.mean([gradient_score, hotspot_score, spread_score])
+            'trend_score': trend_score,
+            'proxy_value_score': proxy_value_score,
+            'confidence': statistics.mean([gradient_score, hotspot_score, spread_score, trend_score, proxy_value_score])
         }
     
     def _analyze_gas_patterns(self, gas_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze gas patterns in the data."""
-        # Extract gas concentrations
-        co_ppm = gas_data.get('co_concentration', 0.0)
-        smoke_density = gas_data.get('smoke_density', 0.0)
-        voc_level = gas_data.get('voc_total', 0.0)
+        """Analyze gas patterns in the data using SCD41 CO₂ sensor features."""
+        # Extract SCD41 gas features
+        gas_val = gas_data.get('gas_val', 400.0)  # Baseline CO₂ level
+        gas_delta = gas_data.get('gas_delta', 0.0)
+        gas_vel = gas_data.get('gas_vel', 0.0)
         
-        # Calculate pattern scores (normalized to 0-1)
-        co_score = min(1.0, co_ppm / 50.0)  # 50 ppm as reference
-        smoke_score = min(1.0, smoke_density / 100.0)  # 100% as reference
-        voc_score = min(1.0, voc_level / 1000.0)  # 1000 ppb as reference
+        # Calculate pattern scores based on SCD41 features
+        # CO₂ concentration analysis (elevated CO₂ is a fire indicator)
+        co_score = min(1.0, max(0.0, (gas_val - 600.0) / 2000.0))  # Reference 600 ppm baseline
+        
+        # CO₂ change rate analysis (rapid increase indicates fire)
+        delta_score = min(1.0, abs(gas_delta) / 200.0)  # Normalize to 200 ppm change reference
+        
+        # CO₂ velocity analysis (rate of change)
+        vel_score = min(1.0, abs(gas_vel) / 50.0)  # Normalize to 50 ppm/s reference
+        
+        # Combined gas activity score
+        gas_activity_score = min(1.0, (abs(gas_delta) + abs(gas_vel) * 10) / 300.0)
         
         return {
             'co_score': co_score,
-            'smoke_score': smoke_score,
-            'voc_score': voc_score,
-            'confidence': statistics.mean([co_score, smoke_score, voc_score])
+            'delta_score': delta_score,
+            'velocity_score': vel_score,
+            'activity_score': gas_activity_score,
+            'confidence': statistics.mean([co_score, delta_score, vel_score, gas_activity_score])
         }
     
     def _analyze_environmental_patterns(self, env_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -348,48 +373,86 @@ class FirePatternAnalysisAgent(AnalysisAgent):
         }
     
     def _calculate_signature_match(self, data: Dict[str, Any], signature_config: Dict[str, Any]) -> float:
-        """Calculate match score against a specific fire signature."""
+        """Calculate match score against a specific fire signature using FLIR + SCD41 features."""
         # This is a simplified signature matching - in a real system,
         # this would use more sophisticated pattern matching algorithms
         
         match_components = []
         
-        # Check thermal signature
+        # Check thermal signature using FLIR features
         if 'thermal_threshold' in signature_config:
-            thermal_temp = data.get('thermal', {}).get('temperature_max', 0.0)
+            thermal_temp = data.get('thermal_features', {}).get('t_max', 0.0)
             threshold = signature_config['thermal_threshold']
             if thermal_temp >= threshold:
                 match_components.append(min(1.0, thermal_temp / (threshold * 1.5)))
         
-        # Check gas signature
+        # Check gas signature using SCD41 features
         if 'gas_thresholds' in signature_config:
-            gas_data = data.get('gas', {})
-            for gas_type, threshold in signature_config['gas_thresholds'].items():
-                gas_level = gas_data.get(f'{gas_type}_concentration', 0.0)
+            gas_data = data.get('gas_features', {})
+            for gas_feature, threshold in signature_config['gas_thresholds'].items():
+                gas_level = gas_data.get(gas_feature, 400.0)  # CO₂ baseline
                 if gas_level >= threshold:
                     match_components.append(min(1.0, gas_level / (threshold * 1.5)))
+        
+        # Check for combined thermal-gas correlation patterns
+        if 'thermal_gas_correlation' in signature_config:
+            thermal_features = data.get('thermal_features', {})
+            gas_features = data.get('gas_features', {})
+            
+            # Check if both thermal and gas indicators are active
+            thermal_active = thermal_features.get('t_hot_area_pct', 0) > 5.0
+            gas_active = gas_features.get('gas_delta', 0) > 50.0
+            
+            if thermal_active and gas_active:
+                match_components.append(0.8)  # Strong correlation score
         
         return statistics.mean(match_components) if match_components else 0.0
     
     def _assess_data_quality(self, data: Dict[str, Any]) -> str:
-        """Assess the quality of input data."""
+        """Assess the quality of input data with FLIR + SCD41 features."""
         quality_score = 0
         total_checks = 0
         
-        # Check data completeness
-        expected_keys = ['thermal', 'gas', 'environmental']
+        # Check data completeness for new feature format
+        expected_keys = ['thermal_features', 'gas_features']
         for key in expected_keys:
             total_checks += 1
             if key in data and data[key]:
                 quality_score += 1
         
-        # Check data validity (non-negative values, reasonable ranges)
-        if 'thermal' in data:
-            thermal = data['thermal']
+        # Check thermal features completeness
+        if 'thermal_features' in data:
+            thermal_features = data['thermal_features']
+            required_thermal = ['t_max', 't_mean', 't_hot_area_pct', 'tproxy_val']
+            for feature in required_thermal:
+                total_checks += 1
+                if feature in thermal_features and thermal_features[feature] is not None:
+                    quality_score += 1
+        
+        # Check gas features completeness
+        if 'gas_features' in data:
+            gas_features = data['gas_features']
+            required_gas = ['gas_val', 'gas_delta', 'gas_vel']
+            for feature in required_gas:
+                total_checks += 1
+                if feature in gas_features and gas_features[feature] is not None:
+                    quality_score += 1
+        
+        # Check data validity (reasonable ranges for FLIR + SCD41)
+        if 'thermal_features' in data:
+            thermal = data['thermal_features']
             total_checks += 2
-            if thermal.get('temperature_max', 0) > 0:
+            if -10 <= thermal.get('t_max', 0) <= 400:  # FLIR temperature range
                 quality_score += 1
-            if 0 <= thermal.get('temperature_avg', -1) <= 200:  # Reasonable temp range
+            if 0 <= thermal.get('t_hot_area_pct', -1) <= 100:  # Percentage range
+                quality_score += 1
+        
+        if 'gas_features' in data:
+            gas = data['gas_features']
+            total_checks += 2
+            if 400 <= gas.get('gas_val', 0) <= 40000:  # SCD41 CO₂ range
+                quality_score += 1
+            if -1000 <= gas.get('gas_delta', 0) <= 1000:  # Reasonable delta range
                 quality_score += 1
         
         quality_ratio = quality_score / total_checks if total_checks > 0 else 0
@@ -453,48 +516,187 @@ class FirePatternAnalysisAgent(AnalysisAgent):
 
 # Helper classes for specialized pattern analysis
 class ThermalPatternAnalyzer:
-    """Specialized analyzer for thermal patterns."""
+    """Specialized analyzer for thermal patterns using FLIR Lepton 3.5 features."""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
     
     def analyze(self, thermal_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze thermal patterns."""
+        """Analyze thermal patterns using FLIR features."""
+        if not thermal_data:
+            return {
+                'thermal_signature_detected': False,
+                'hotspot_analysis': {},
+                'temperature_trend': 'stable',
+                'confidence': 0.0
+            }
+        
+        # Analyze FLIR-specific features
+        t_max = thermal_data.get('t_max', 0.0)
+        t_hot_area_pct = thermal_data.get('t_hot_area_pct', 0.0)
+        flow_mag_mean = thermal_data.get('flow_mag_mean', 0.0)
+        tproxy_delta = thermal_data.get('tproxy_delta', 0.0)
+        
+        # Determine if thermal signature indicates fire
+        thermal_signature = (
+            t_max > 50.0 or  # High temperature
+            t_hot_area_pct > 10.0 or  # Large hot area
+            abs(tproxy_delta) > 3.0  # Rapid temperature change
+        )
+        
+        # Hotspot analysis
+        hotspot_analysis = {
+            'hot_area_percentage': t_hot_area_pct,
+            'temperature_gradient': thermal_data.get('t_grad_mean', 0.0),
+            'motion_detected': flow_mag_mean > 0.5
+        }
+        
+        # Temperature trend
+        if tproxy_delta > 1.0:
+            temperature_trend = 'rising'
+        elif tproxy_delta < -1.0:
+            temperature_trend = 'falling'
+        else:
+            temperature_trend = 'stable'
+        
+        # Confidence based on multiple FLIR indicators
+        confidence_indicators = [
+            min(1.0, t_max / 100.0),
+            min(1.0, t_hot_area_pct / 30.0),
+            min(1.0, abs(tproxy_delta) / 10.0),
+            min(1.0, flow_mag_mean / 2.0)
+        ]
+        confidence = statistics.mean(confidence_indicators)
+        
         return {
-            'thermal_signature_detected': False,
-            'hotspot_analysis': {},
-            'temperature_trend': 'stable',
-            'confidence': 0.5
+            'thermal_signature_detected': thermal_signature,
+            'hotspot_analysis': hotspot_analysis,
+            'temperature_trend': temperature_trend,
+            'confidence': confidence
         }
 
 
 class GasPatternAnalyzer:
-    """Specialized analyzer for gas patterns."""
+    """Specialized analyzer for gas patterns using SCD41 CO₂ sensor features."""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
     
     def analyze(self, gas_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze gas patterns."""
+        """Analyze gas patterns using SCD41 features."""
+        if not gas_data:
+            return {
+                'gas_signature_detected': False,
+                'concentration_analysis': {},
+                'gas_trend': 'stable',
+                'confidence': 0.0
+            }
+        
+        # Analyze SCD41-specific features
+        gas_val = gas_data.get('gas_val', 400.0)
+        gas_delta = gas_data.get('gas_delta', 0.0)
+        gas_vel = gas_data.get('gas_vel', 0.0)
+        
+        # Determine if gas signature indicates fire
+        gas_signature = (
+            gas_val > 1000.0 or  # Elevated CO₂
+            abs(gas_delta) > 100.0 or  # Rapid CO₂ change
+            abs(gas_vel) > 10.0  # High CO₂ velocity
+        )
+        
+        # Concentration analysis
+        concentration_analysis = {
+            'co2_level': gas_val,
+            'change_rate': gas_delta,
+            'velocity': gas_vel,
+            'elevated': gas_val > 600.0
+        }
+        
+        # Gas trend
+        if gas_vel > 2.0:
+            gas_trend = 'rising'
+        elif gas_vel < -2.0:
+            gas_trend = 'falling'
+        else:
+            gas_trend = 'stable'
+        
+        # Confidence based on multiple SCD41 indicators
+        confidence_indicators = [
+            min(1.0, max(0.0, (gas_val - 400.0) / 2000.0)),
+            min(1.0, abs(gas_delta) / 200.0),
+            min(1.0, abs(gas_vel) / 20.0)
+        ]
+        confidence = statistics.mean(confidence_indicators)
+        
         return {
-            'gas_signature_detected': False,
-            'concentration_analysis': {},
-            'gas_trend': 'stable',
-            'confidence': 0.5
+            'gas_signature_detected': gas_signature,
+            'concentration_analysis': concentration_analysis,
+            'gas_trend': gas_trend,
+            'confidence': confidence
         }
 
 
 class TemporalPatternAnalyzer:
-    """Specialized analyzer for temporal patterns."""
+    """Specialized analyzer for temporal patterns using FLIR + SCD41 features."""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
     
     def analyze(self, current_data: Dict[str, Any], historical_data: deque) -> Dict[str, Any]:
-        """Analyze temporal patterns."""
+        """Analyze temporal patterns using FLIR + SCD41 features."""
+        if not current_data or len(historical_data) < 2:
+            return {
+                'temporal_signature_detected': False,
+                'trend_analysis': {},
+                'progression_rate': 0.0,
+                'confidence': 0.0
+            }
+        
+        # Extract current features
+        current_thermal = current_data.get('thermal_features', {})
+        current_gas = current_data.get('gas_features', {})
+        
+        # Analyze temporal trends
+        trend_analysis = {}
+        progression_rate = 0.0
+        
+        # Analyze thermal temporal trends
+        if current_thermal:
+            thermal_trends = []
+            for historical_entry in list(historical_data)[-5:]:  # Last 5 entries
+                historical_thermal = historical_entry.get('thermal_features', {})
+                if historical_thermal and 'tproxy_val' in current_thermal and 'tproxy_val' in historical_thermal:
+                    thermal_change = current_thermal['tproxy_val'] - historical_thermal['tproxy_val']
+                    thermal_trends.append(thermal_change)
+            
+            if thermal_trends:
+                avg_thermal_trend = statistics.mean(thermal_trends)
+                trend_analysis['thermal_trend'] = avg_thermal_trend
+                progression_rate += abs(avg_thermal_trend)
+        
+        # Analyze gas temporal trends
+        if current_gas:
+            gas_trends = []
+            for historical_entry in list(historical_data)[-5:]:  # Last 5 entries
+                historical_gas = historical_entry.get('gas_features', {})
+                if historical_gas and 'gas_val' in current_gas and 'gas_val' in historical_gas:
+                    gas_change = current_gas['gas_val'] - historical_gas['gas_val']
+                    gas_trends.append(gas_change)
+            
+            if gas_trends:
+                avg_gas_trend = statistics.mean(gas_trends)
+                trend_analysis['gas_trend'] = avg_gas_trend
+                progression_rate += abs(avg_gas_trend) / 10.0  # Normalize gas changes
+        
+        # Determine if temporal signature indicates fire (accelerating trends)
+        temporal_signature = progression_rate > 2.0  # Threshold for significant progression
+        
+        # Confidence based on temporal consistency
+        confidence = min(1.0, progression_rate / 10.0)
+        
         return {
-            'temporal_signature_detected': False,
-            'trend_analysis': {},
-            'progression_rate': 0.0,
-            'confidence': 0.5
+            'temporal_signature_detected': temporal_signature,
+            'trend_analysis': trend_analysis,
+            'progression_rate': progression_rate,
+            'confidence': confidence
         }

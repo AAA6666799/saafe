@@ -97,3 +97,7 @@ data/
 models/
 config/secrets/*.json
 .DS_Store
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml

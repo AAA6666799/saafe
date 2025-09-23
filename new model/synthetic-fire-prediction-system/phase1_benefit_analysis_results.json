@@ -1,0 +1,27 @@
+{
+  "base_features": {
+    "flir_features": 15,
+    "gas_features": 3,
+    "derived_features": 11,
+    "fire_indicators": 10,
+    "quality_metrics": 7,
+    "total_features": 46
+  },
+  "enhanced_features": {
+    "base_features": 46,
+    "enhanced_thermal_features": 37,
+    "enhanced_gas_features": 23,
+    "fusion_features": 14,
+    "correlation_features": 7,
+    "total_features": 127
+  },
+  "feature_increase": 81,
+  "feature_increase_percentage": 176.08695652173913,
+  "performance_projection": {
+    "base_auc": 0.7658,
+    "expected_auc_improvement": 0.17608695652173914,
+    "quality_improvement": 0.03,
+    "total_expected_improvement": 0.20608695652173914,
+    "projected_auc": 0.9718869565217392
+  }
+}

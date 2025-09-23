@@ -1,20 +1,24 @@
 """
-Gas feature extractors package for the synthetic fire prediction system.
-
-This package provides implementations of feature extractors for gas concentration data.
+Gas Feature Extractors Package.
 """
 
-# Import feature extractors
-from .gas_concentration_extractor import GasConcentrationExtractor
+# Import all gas extractors
 from .gas_anomaly_detector import GasAnomalyDetector
+from .gas_concentration_extractor import GasConcentrationExtractor
 from .gas_pattern_analyzer import GasPatternAnalyzer
 from .gas_rate_of_change_calculator import GasRateOfChangeCalculator
 from .gas_ratio_calculator import GasRatioCalculator
 
+# Import enhanced analysis modules
+from .gas_accumulation_analyzer import GasAccumulationAnalyzer
+from .baseline_drift_detector import BaselineDriftDetector
+
 __all__ = [
-    'GasConcentrationExtractor',
     'GasAnomalyDetector',
+    'GasConcentrationExtractor',
     'GasPatternAnalyzer',
     'GasRateOfChangeCalculator',
-    'GasRatioCalculator'
+    'GasRatioCalculator',
+    'GasAccumulationAnalyzer',
+    'BaselineDriftDetector'
 ]

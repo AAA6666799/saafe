@@ -1,10 +1,22 @@
 """
-Feature fusion package for the synthetic fire prediction system.
-
-This package provides components for fusing features from different sources
-(thermal, gas, environmental, temporal) to create more powerful predictive features.
+Feature Fusion Package.
 """
 
-from .feature_fusion_system import FeatureFusionSystem, FusionPipeline
+# Import the main fusion system
+from .feature_fusion_system import FeatureFusionSystem
 
-__all__ = ['FeatureFusionSystem', 'FusionPipeline']
+# Import fusion components
+from .early import *
+from .late import *
+from .hybrid import *
+from .selection import *
+
+# Import enhanced fusion modules
+from .cross_sensor_correlation_analyzer import CrossSensorCorrelationAnalyzer
+from .cross_sensor_fusion_extractor import CrossSensorFusionExtractor
+
+__all__ = [
+    'FeatureFusionSystem',
+    'CrossSensorCorrelationAnalyzer',
+    'CrossSensorFusionExtractor'
+]

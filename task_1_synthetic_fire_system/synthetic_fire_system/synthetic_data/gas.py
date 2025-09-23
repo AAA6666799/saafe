@@ -1,1 +1,0 @@
-# Placeholder for gas data generation components

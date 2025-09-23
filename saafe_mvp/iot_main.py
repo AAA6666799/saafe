@@ -58,8 +58,16 @@ class IoTFireDetectionSystem:
         if self.model is None:
             raise RuntimeError("No model available for inference")
         
-        # Initialize notification system
-        self.notification_manager = NotificationManager()
+        # Initialize notification system with a default configuration
+        from saafe_mvp.services.notification_manager import NotificationConfig
+        default_config = NotificationConfig(
+            sms_enabled=False,
+            email_enabled=False,
+            push_enabled=False,
+            phone_numbers=[],
+            email_addresses=[]
+        )
+        self.notification_manager = NotificationManager(default_config)
         
         # Area configuration
         self.area_config = {

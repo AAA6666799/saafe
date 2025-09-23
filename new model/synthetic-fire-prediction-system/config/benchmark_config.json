@@ -1,0 +1,94 @@
+{
+  "scenarios": [
+    {
+      "name": "Baseline_performance",
+      "description": "Standard fire detection scenario",
+      "thermal_features": {
+        "t_mean": 25.0,
+        "t_std": 3.0,
+        "t_max": 45.0,
+        "t_p95": 38.0,
+        "t_hot_area_pct": 8.0,
+        "t_hot_largest_blob_pct": 5.0,
+        "t_grad_mean": 2.0,
+        "t_grad_std": 0.8,
+        "t_diff_mean": 1.5,
+        "t_diff_std": 0.6,
+        "flow_mag_mean": 1.2,
+        "flow_mag_std": 0.4,
+        "tproxy_val": 42.0,
+        "tproxy_delta": 8.0,
+        "tproxy_vel": 3.0
+      },
+      "gas_features": {
+        "gas_val": 485.0,
+        "gas_delta": 25.0,
+        "gas_vel": 25.0
+      }
+    },
+    {
+      "name": "High_intensity_fire",
+      "description": "High-intensity fire scenario",
+      "thermal_features": {
+        "t_mean": 75.0,
+        "t_std": 25.0,
+        "t_max": 120.0,
+        "t_p95": 105.0,
+        "t_hot_area_pct": 45.0,
+        "t_hot_largest_blob_pct": 30.0,
+        "t_grad_mean": 15.0,
+        "t_grad_std": 7.0,
+        "t_diff_mean": 12.0,
+        "t_diff_std": 5.0,
+        "flow_mag_mean": 8.0,
+        "flow_mag_std": 3.0,
+        "tproxy_val": 110.0,
+        "tproxy_delta": 45.0,
+        "tproxy_vel": 22.0
+      },
+      "gas_features": {
+        "gas_val": 3500.0,
+        "gas_delta": 800.0,
+        "gas_vel": 400.0
+      }
+    },
+    {
+      "name": "Early_detection",
+      "description": "Early fire detection scenario",
+      "thermal_features": {
+        "t_mean": 30.0,
+        "t_std": 5.0,
+        "t_max": 50.0,
+        "t_p95": 42.0,
+        "t_hot_area_pct": 3.0,
+        "t_hot_largest_blob_pct": 1.5,
+        "t_grad_mean": 1.5,
+        "t_grad_std": 0.6,
+        "t_diff_mean": 0.8,
+        "t_diff_std": 0.3,
+        "flow_mag_mean": 0.5,
+        "flow_mag_std": 0.2,
+        "tproxy_val": 48.0,
+        "tproxy_delta": 3.0,
+        "tproxy_vel": 1.5
+      },
+      "gas_features": {
+        "gas_val": 650.0,
+        "gas_delta": 40.0,
+        "gas_vel": 20.0
+      }
+    }
+  ],
+  "iterations_per_scenario": 100,
+  "metrics": [
+    "processing_time",
+    "memory_usage",
+    "accuracy",
+    "confidence"
+  ],
+  "thresholds": {
+    "max_processing_time_ms": 1000,
+    "min_accuracy": 0.85,
+    "min_confidence": 0.7
+  }
+}

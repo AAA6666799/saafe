@@ -74,6 +74,11 @@ class ModelEnsembleManager:
         self.enable_calibration = config.get('enable_calibration', True)
         self.cross_validation_folds = config.get('cross_validation_folds', 5)
         
+        # FLIR+SCD41 specific configuration
+        self.input_features = config.get('input_features', 18)  # 15 thermal + 3 gas
+        self.thermal_feature_count = config.get('thermal_feature_count', 15)
+        self.gas_feature_count = config.get('gas_feature_count', 3)
+        
         # Model configurations
         self.model_configs = config.get('model_configs', {})
         self.enabled_models = config.get('enabled_models', [])
@@ -185,16 +190,17 @@ class ModelEnsembleManager:
             raise
     
     def create_default_ensemble(self):
-        """Create a default ensemble with available models."""
+        """Create a default ensemble with available models configured for FLIR+SCD41 input."""
         default_models = []
         
-        # Add Random Forest (always available)
+        # Add Random Forest (always available) with FLIR+SCD41 configuration
         rf_config = {
             'algorithm': 'random_forest',
             'n_estimators': 200,
             'max_depth': 15,
             'class_weight': 'balanced',
-            'random_state': 42
+            'random_state': 42,
+            'input_features': self.input_features  # 18 features (15 thermal + 3 gas)
         }
         self.add_model('random_forest', rf_config, 'random_forest')
         default_models.append('random_forest')
@@ -208,15 +214,17 @@ class ModelEnsembleManager:
                 'subsample': 0.8,
                 'colsample_bytree': 0.8,
                 'class_weight': 'balanced',
-                'random_state': 42
+                'random_state': 42,
+                'input_features': self.input_features  # 18 features (15 thermal + 3 gas)
             }
             self.add_model('xgboost', xgb_config, 'xgboost')
             default_models.append('xgboost')
         
-        # Add LSTM if available
+        # Add LSTM if available with proper input size
         if LSTM_AVAILABLE:
             lstm_config = {
                 'sequence_length': 30,
+                'input_size': self.input_features,  # 18 features (15 thermal + 3 gas)
                 'hidden_size': 64,
                 'num_layers': 2,
                 'dropout': 0.2,
@@ -459,15 +467,21 @@ class ModelEnsembleManager:
     
     def predict(self, X: pd.DataFrame, return_confidence: bool = True) -> Union[np.ndarray, Tuple[np.ndarray, Dict[str, Any]]]:
         """
-        Make ensemble predictions.
+        Make ensemble predictions for FLIR+SCD41 data.
         
         Args:
-            X: Features to predict
+            X: Features to predict (should have 18 columns: 15 thermal + 3 gas)
             return_confidence: Whether to return confidence scores
             
         Returns:
             Predictions, and optionally confidence/uncertainty information
         """
+        # Validate input features
+        expected_features = self.input_features  # 18 features (15 thermal + 3 gas)
+        if X.shape[1] != expected_features:
+            self.logger.warning(f"Input features mismatch: expected {expected_features}, got {X.shape[1]}")
+            # Try to proceed but log the issue
+            
         if not any(model_info['trained'] for model_info in self.models.values()):
             raise ValueError("No trained models available for prediction")
         
@@ -599,15 +613,31 @@ class ModelEnsembleManager:
                     self.logger.debug(f"Uncertainty estimator prediction failed: {e}")
             
             # Combined confidence score (weighted average of available metrics)
-            confidence_components = []
-            if 'probability_confidence' in confidence_info:
-                confidence_components.append(confidence_info['probability_confidence'])
-            if 'model_agreement' in confidence_info:
-                confidence_components.append(confidence_info['model_agreement'])
+            combined_confidence = 0.0
+            weight_sum = 0.0
             
-            if confidence_components:
-                confidence_info['combined_confidence'] = np.mean(confidence_components, axis=0)
+            # Weight different confidence metrics
+            weights = {
+                'probability_confidence': 0.4,
+                'model_agreement': 0.3,
+                'calibrated_confidence': 0.2,
+                'estimated_uncertainty': 0.1
+            }
             
+            for metric, weight in weights.items():
+                if metric in confidence_info:
+                    if metric == 'estimated_uncertainty':
+                        # Uncertainty is inverse of confidence
+                        combined_confidence += weight * (1.0 - np.mean(confidence_info[metric]))
+                    else:
+                        combined_confidence += weight * np.mean(confidence_info[metric])
+                    weight_sum += weight
+            
+            if weight_sum > 0:
+                confidence_info['combined_confidence'] = combined_confidence / weight_sum
+            else:
+                confidence_info['combined_confidence'] = 0.5  # Default confidence
+        
         except Exception as e:
             self.logger.warning(f"Error calculating confidence scores: {e}")
             # Fallback: return default confidence
@@ -615,6 +645,86 @@ class ModelEnsembleManager:
             confidence_info['combined_confidence'] = np.full(n_samples, 0.5)
         
         return confidence_info
+    
+    def predict_flir_scd41(self, thermal_features: pd.DataFrame, gas_features: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Make predictions specifically for FLIR+SCD41 data.
+        
+        Args:
+            thermal_features: DataFrame with 15 thermal features
+            gas_features: DataFrame with 3 gas features
+            
+        Returns:
+            Dictionary containing predictions and confidence information
+        """
+        # Validate input
+        if thermal_features.shape[1] != self.thermal_feature_count:
+            raise ValueError(f"Expected {self.thermal_feature_count} thermal features, got {thermal_features.shape[1]}")
+        
+        if gas_features.shape[1] != self.gas_feature_count:
+            raise ValueError(f"Expected {self.gas_feature_count} gas features, got {gas_features.shape[1]}")
+        
+        # Combine features
+        combined_features = pd.concat([thermal_features, gas_features], axis=1)
+        
+        # Make predictions
+        predictions, confidence_info = self.predict(combined_features, return_confidence=True)
+        
+        # Extract fire detection result
+        fire_detected = bool(predictions[0]) if len(predictions) > 0 else False
+        confidence_score = float(confidence_info.get('combined_confidence', 0.0))
+        
+        return {
+            'fire_detected': fire_detected,
+            'confidence_score': confidence_score,
+            'predictions': predictions,
+            'confidence_info': confidence_info,
+            'thermal_features_count': thermal_features.shape[1],
+            'gas_features_count': gas_features.shape[1],
+            'total_features': combined_features.shape[1]
+        }
+    
+    def get_feature_importance(self) -> Dict[str, Any]:
+        """
+        Get feature importance for trained models.
+        
+        Returns:
+            Dictionary containing feature importance information
+        """
+        importance_info = {}
+        
+        for model_name, model_info in self.models.items():
+            if not model_info['trained']:
+                continue
+                
+            model = model_info['model']
+            
+            # Try to get feature importance from the model
+            try:
+                if hasattr(model.model, 'feature_importances_'):
+                    # For tree-based models like Random Forest, XGBoost
+                    importance = model.model.feature_importances_
+                    importance_info[model_name] = {
+                        'type': 'feature_importance',
+                        'values': importance.tolist(),
+                        'feature_names': [f'feature_{i}' for i in range(len(importance))]
+                    }
+                elif hasattr(model.model, 'coef_'):
+                    # For linear models
+                    coef = model.model.coef_
+                    if len(coef.shape) == 1:
+                        importance = np.abs(coef)
+                    else:
+                        importance = np.mean(np.abs(coef), axis=0)
+                    importance_info[model_name] = {
+                        'type': 'coefficient_magnitude',
+                        'values': importance.tolist(),
+                        'feature_names': [f'feature_{i}' for i in range(len(importance))]
+                    }
+            except Exception as e:
+                self.logger.debug(f"Could not extract feature importance from {model_name}: {e}")
+        
+        return importance_info
     
     def get_model_info(self) -> Dict[str, Any]:
         """Get comprehensive information about the ensemble."""

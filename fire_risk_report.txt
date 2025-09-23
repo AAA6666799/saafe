@@ -1,0 +1,30 @@
+🔥 SAAFE FIRE DETECTION SYSTEM - RISK ASSESSMENT REPORT
+============================================================
+Report Generated: 2025-09-08 09:34:23
+
+📊 GAS SENSOR ANALYSIS
+------------------------------
+Maximum CO Level: 0.00 ppm
+Maximum NO2 Level: 0.00 ppm
+Maximum VOC Level: 0.00 ppb
+Gas Risk Level: LOW
+
+🌡️  THERMAL SENSOR ANALYSIS
+------------------------------
+Maximum Temperature: 27.83 °C
+Average Temperature: 26.18 °C
+Thermal Risk Level: LOW
+
+🚨 OVERALL FIRE RISK ASSESSMENT
+----------------------------------------
+Overall Risk Level: LOW
+✅ CURRENTLY NO DETECTED FIRE RISK
+   - Continue routine monitoring
+
+📝 RECOMMENDATIONS
+--------------------
+1. Continue regular monitoring of both gas and thermal sensors
+2. Calibrate sensors regularly to ensure accuracy
+3. Establish baseline readings for normal conditions
+4. Set up automated alerts for threshold crossings
+5. Integrate with fire suppression systems for automatic response

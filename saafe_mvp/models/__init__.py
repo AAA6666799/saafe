@@ -22,7 +22,7 @@ from .model_loader import (
 from .anti_hallucination import (
     AntiHallucinationEngine,
     EnsembleFireDetector,
-    CookingPatternDetector,
+    IoTAreaPatternDetector,
     FireSignatureValidator,
     ValidationResult
 )
@@ -48,7 +48,7 @@ __all__ = [
     'validate_model',
     'AntiHallucinationEngine',
     'EnsembleFireDetector',
-    'CookingPatternDetector',
+    'IoTAreaPatternDetector',
     'FireSignatureValidator',
     'ValidationResult',
     'ModelManager',

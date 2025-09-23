@@ -310,7 +310,11 @@ class MultiAgentFireDetectionSystem:
     def _initialize_analysis_agents(self) -> None:
         """Initialize analysis agents."""
         # Fire pattern analysis agent
-        analysis_config = self.config.get('analysis', {}).get('fire_pattern', {})
+        analysis_config = self.config.get('analysis', {}).get('fire_pattern', {
+            'confidence_threshold': 0.7,
+            'pattern_window_size': 50,
+            'fire_signatures': {}
+        })
         pattern_analyzer = FirePatternAnalysisAgent('fire_pattern_analyzer', analysis_config)
         self.agents['fire_pattern_analyzer'] = pattern_analyzer
         self.agent_types['analysis'].append('fire_pattern_analyzer')
@@ -409,12 +413,20 @@ class MultiAgentFireDetectionSystem:
             try:
                 analyzer = self.agents['fire_pattern_analyzer']
                 
-                # Prepare analysis input
+                # Prepare analysis input with FLIR+SCD41 specific formatting
                 analysis_input = {
                     **sensor_data,
                     'monitoring_results': monitoring_results,
                     'processing_id': processing_id
                 }
+                
+                # Extract FLIR thermal features if present
+                if 'flir' in sensor_data and 'flir_lepton35' in sensor_data['flir']:
+                    analysis_input['thermal_features'] = sensor_data['flir']['flir_lepton35']
+                
+                # Extract SCD41 gas features if present
+                if 'scd41' in sensor_data and 'scd41_co2' in sensor_data['scd41']:
+                    analysis_input['gas_features'] = sensor_data['scd41']['scd41_co2']
                 
                 analysis_result = analyzer.process(analysis_input)
                 return analysis_result
@@ -440,6 +452,14 @@ class MultiAgentFireDetectionSystem:
                     'processing_id': processing_id
                 }
                 
+                # Add FLIR+SCD41 specific data if available in analysis results
+                if 'analysis_components' in analysis_results:
+                    components = analysis_results['analysis_components']
+                    if 'thermal_analysis' in components:
+                        response_input['thermal_features'] = components['thermal_analysis']
+                    if 'gas_analysis' in components:
+                        response_input['gas_features'] = components['gas_analysis']
+                
                 response_result = responder.process(response_input)
                 return response_result
             except Exception as e:
@@ -463,8 +483,16 @@ class MultiAgentFireDetectionSystem:
                     },
                     'prediction_results': analysis_results,
                     'response_results': response_results,
+                    'sensor_data': sensor_data,
                     'processing_id': processing_id
                 }
+                
+                # Add FLIR+SCD41 specific data for learning
+                if 'flir' in sensor_data and 'flir_lepton35' in sensor_data['flir']:
+                    learning_input['flir_data'] = sensor_data['flir']['flir_lepton35']
+                
+                if 'scd41' in sensor_data and 'scd41_co2' in sensor_data['scd41']:
+                    learning_input['scd41_data'] = sensor_data['scd41']['scd41_co2']
                 
                 learning_result = learner.process(learning_input)
                 return learning_result
@@ -480,7 +508,30 @@ class MultiAgentFireDetectionSystem:
             'timestamp': datetime.now().isoformat()
         }
         
-        # Summarize thermal data
+        # Summarize FLIR Lepton 3.5 thermal data
+        if 'flir' in sensor_data:
+            flir_data = sensor_data['flir']
+            if 'flir_lepton35' in flir_data:
+                thermal = flir_data['flir_lepton35']
+                summary['flir_lepton35'] = {
+                    'max_temperature': thermal.get('t_max', 0.0),
+                    'avg_temperature': thermal.get('t_mean', 0.0),
+                    'hot_area_percentage': thermal.get('t_hot_area_pct', 0.0),
+                    'temperature_proxy': thermal.get('tproxy_val', 0.0)
+                }
+        
+        # Summarize SCD41 CO₂ gas data
+        if 'scd41' in sensor_data:
+            scd41_data = sensor_data['scd41']
+            if 'scd41_co2' in scd41_data:
+                gas = scd41_data['scd41_co2']
+                summary['scd41_co2'] = {
+                    'co2_concentration': gas.get('gas_val', 0.0),
+                    'co2_change_rate': gas.get('gas_delta', 0.0),
+                    'co2_velocity': gas.get('gas_vel', 0.0)
+                }
+        
+        # Handle legacy format for backward compatibility
         if 'thermal' in sensor_data:
             thermal = sensor_data['thermal']
             summary['thermal'] = {
@@ -489,7 +540,6 @@ class MultiAgentFireDetectionSystem:
                 'hotspot_count': thermal.get('hotspot_count', 0)
             }
         
-        # Summarize gas data
         if 'gas' in sensor_data:
             gas = sensor_data['gas']
             summary['gas'] = {
