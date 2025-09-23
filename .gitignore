@@ -109,3 +109,8 @@ node_modules/
 *.model
 *.h5
 *.npz
+
+# Explicitly exclude specific large files and directories
+AWSCLIV2.pkg
+qdrant
+storage/
