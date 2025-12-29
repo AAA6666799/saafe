@@ -1,0 +1,30 @@
+[Unit]
+Description=Kitchen Fire Detection System
+After=network.target
+After=multi-user.target
+
+[Service]
+Type=simple
+User=ajaykumar
+Group=ajaykumar
+WorkingDirectory=/Volumes/Ajay/saafe copy 3
+Environment=PATH=/Users/ajaykumar/.nvm/versions/node/v20.19.0/bin:/Users/ajaykumar/.codeium/windsurf/bin:/Users/ajaykumar/Library/Python/3.12/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/opt/homebrew/bin:/Users/ajaykumar/Library/Android/sdk/build-tools/34.0.0:/Users/ajaykumar/Library/Android/sdk/platform-tools:/Users/ajaykumar/Library/Android/sdk/cmdline-tools/latest/bin:/Users/ajaykumar/anaconda3/bin:/opt/homebrew/bin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/ajaykumar/.lmstudio/bin
+Environment=PYTHONPATH=/Volumes/Ajay/saafe copy 3
+Environment=STREAMLIT_SERVER_HEADLESS=true
+Environment=STREAMLIT_SERVER_PORT=8501
+Environment=STREAMLIT_SERVER_ADDRESS=0.0.0.0
+ExecStart=/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 -m streamlit run /Volumes/Ajay/saafe copy 3/saafe_mvp/main.py --server.port=8501 --server.address=0.0.0.0 --server.headless=true
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/Volumes/Ajay/saafe copy 3/logs /Volumes/Ajay/saafe copy 3/exports /Volumes/Ajay/saafe copy 3/temp
+
+[Install]
+WantedBy=multi-user.target

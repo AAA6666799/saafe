@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+        }
+        .test-btn {
+            background: #667eea;
+        }
+        .fire-btn {
+            background: #ef4444;
+        }
+        pre {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+        }
+        .success {
+            color: #22c55e;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .info {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Direct API Test</h1>
+        
+        <div class="info">
+            <strong>Purpose:</strong> This page tests the API directly without any framework overhead.
+            Open your browser's Console (F12) to see detailed logs.
+        </div>
+
+        <h2>Test Buttons</h2>
+        <button class="test-btn" onclick="testHealth()">Test Health</button>
+        <button class="test-btn" onclick="testGetAlertState()">Get Alert State</button>
+        <button class="fire-btn" onclick="sendFireAlert()">Send Fire Alert</button>
+        <button class="test-btn" onclick="testCORS()">Test CORS Preflight</button>
+
+        <h2>Results</h2>
+        <div id="results"></div>
+
+        <h2>Console Logs</h2>
+        <pre id="logs"></pre>
+    </div>
+
+    <script>
+        const API_URL = 'https://fire-dashboard-xi.vercel.app';
+        let logs = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            logs.push(logMessage);
+            document.getElementById('logs').textContent = logs.join('\n');
+            console.log(logMessage);
+            
+            if (type === 'error') {
+                console.error(message);
+            }
+        }
+
+        function showResult(title, data, isError = false) {
+            const resultsDiv = document.getElementById('results');
+            const className = isError ? 'error' : 'success';
+            resultsDiv.innerHTML = `
+                <h3 class="${className}">${title}</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+
+        async function testHealth() {
+            log('Testing /api/health endpoint...');
+            try {
+                const response = await fetch(`${API_URL}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                log(`Response status: ${response.status}`);
+                log(`Response headers: ${JSON.stringify([...response.headers])}`);
+                
+                const data = await response.json();
+                log('✅ Health check successful');
+                showResult('✅ Health Check Success', data);
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                showResult('❌ Health Check Failed', { error: error.message, stack: error.stack }, true);
+            }
+        }
+
+        async function testGetAlertState() {
+            log('Testing /api/alert-state endpoint...');
+            try {
+                const response = await fetch(`${API_URL}/api/alert-state`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                log(`Response status: ${response.status}`);
+                const data = await response.json();
+                log('✅ Get alert state successful');
+                showResult('✅ Get Alert State Success', data);
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                showResult('❌ Get Alert State Failed', { error: error.message, stack: error.stack }, true);
+            }
+        }
+
+        async function sendFireAlert() {
+            log('Testing /api/send-alert endpoint...');
+            const payload = {
+                riskScore: 90,
+                level: 3,
+                message: "🔥 Test Fire Alert from Direct API Test",
+                confidence: 0.95
+            };
+            
+            log(`Payload: ${JSON.stringify(payload)}`);
+            
+            try {
+                const response = await fetch(`${API_URL}/api/send-alert`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                log(`Response status: ${response.status}`);
+                log(`Response headers: ${JSON.stringify([...response.headers])}`);
+                
+                const data = await response.json();
+                log('✅ Send alert successful');
+                showResult('✅ Send Fire Alert Success', data);
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                log(`Error type: ${error.constructor.name}`, 'error');
+                log(`Error stack: ${error.stack}`, 'error');
+                showResult('❌ Send Fire Alert Failed', { 
+                    error: error.message, 
+                    type: error.constructor.name,
+                    stack: error.stack 
+                }, true);
+            }
+        }
+
+        async function testCORS() {
+            log('Testing CORS preflight...');
+            try {
+                const response = await fetch(`${API_URL}/api/send-alert`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                
+                log(`Preflight status: ${response.status}`);
+                log('CORS Headers:');
+                response.headers.forEach((value, key) => {
+                    if (key.toLowerCase().includes('access-control')) {
+                        log(`  ${key}: ${value}`);
+                    }
+                });
+                
+                showResult('✅ CORS Preflight Success', {
+                    status: response.status,
+                    headers: Object.fromEntries([...response.headers].filter(([k]) => k.includes('access-control')))
+                });
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                showResult('❌ CORS Preflight Failed', { error: error.message }, true);
+            }
+        }
+
+        // Auto-run health check on load
+        window.addEventListener('load', () => {
+            log('Page loaded, running automatic health check...');
+            testHealth();
+        });
+    </script>
+</body>
+</html>

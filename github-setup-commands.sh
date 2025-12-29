@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# GitHub Setup Commands
+# Replace YOUR_USERNAME with your actual GitHub username
+
+echo "🚀 GitHub Repository Setup Commands"
+echo "=================================="
+echo ""
+echo "After creating your repository on GitHub, run these commands:"
+echo ""
+echo "# Add GitHub remote (replace YOUR_USERNAME with your GitHub username)"
+echo "git remote add origin https://github.com/YOUR_USERNAME/saafe-fire-detection-system.git"
+echo ""
+echo "# Rename branch to main (GitHub default)"
+echo "git branch -M main"
+echo ""
+echo "# Push code to GitHub"
+echo "git push -u origin main"
+echo ""
+echo "🎉 Your SAAFE fire detection system will be live on GitHub!"
+echo ""
+echo "📊 Repository will include:"
+echo "✅ Complete fire detection system with AI models"
+echo "✅ React dashboard with real-time monitoring"  
+echo "✅ Node.js backend with AWS S3 integration"
+echo "✅ Multiple AWS deployment scripts"
+echo "✅ Docker containerization support"
+echo "✅ Comprehensive documentation"
+echo "✅ IoT sensor integration code"
+echo "✅ Machine learning training scripts"

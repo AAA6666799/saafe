@@ -1,0 +1,43 @@
+{
+  "name": "saafe-lovable",
+  "version": "1.0.0",
+  "description": "SAAFE Fire Detection Dashboard - Full-stack application with React frontend and Node.js backend",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "build": "npm run build:frontend && npm run copy:dist",
+    "build:frontend": "vite build",
+    "copy:dist": "mkdir -p backend/dist && cp -r dist/* backend/dist/",
+    "postinstall": "npm run build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "fire-detection",
+    "saafe",
+    "iot",
+    "dashboard"
+  ],
+  "author": "SAAFE Team",
+  "license": "ISC",
+  "dependencies": {
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@vercel/kv": "^3.0.0",
+    "aws-sdk": "^2.1692.0",
+    "axios": "^1.12.2",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "mapbox-gl": "^3.15.0",
+    "nodemailer": "^6.9.8",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.9.3",
+    "typescript": "^5.9.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8"
+  }
+}

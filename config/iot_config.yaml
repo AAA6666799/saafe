@@ -1,0 +1,153 @@
+# IoT configuration for kitchen fire detection system
+
+# System configuration
+system:
+  name: "Kitchen Fire Detection System"
+  version: "1.0.0"
+  log_level: "INFO"
+  data_dir: "data"
+  models_dir: "models"
+
+# Hardware configuration for IoT devices
+hardware:
+  mode: "real"  # real, synthetic, or hybrid
+  auto_fallback: true
+  
+  # VOC sensor configuration (for kitchen above chimney)
+  voc_sensors:
+    voc_01:
+      device_path: "/dev/voc0"
+      measurement_range: [0, 1000]  # VOC levels
+      sampling_rate: 1.0  # Every second
+      sensor_type: "mics_voc"
+      location: "kitchen_above_chimney"
+
+# Feature engineering configuration for IoT devices
+feature_engineering:
+  # VOC features
+  voc:
+    features:
+      - voc_val       # Current VOC concentration
+      - voc_delta     # Change from previous reading
+      - voc_vel       # Rate of change
+  
+  # Feature fusion configuration
+  fusion:
+    enabled: true
+    method: "concatenation"
+    feature_count: 3  # 3 VOC features
+
+# Model configuration for IoT devices
+models:
+  input_features: 3  # VOC features
+  voc_feature_count: 3
+  
+  baseline:
+    type: "random_forest"
+    n_estimators: 100
+    max_depth: 10
+    random_state: 42
+  
+  temporal:
+    type: "lstm"
+    hidden_size: 64
+    num_layers: 2
+    dropout: 0.2
+    sequence_length: 30
+  
+  ensemble:
+    models: ["baseline", "temporal"]
+    weights: [0.6, 0.4]
+    voting: "soft"
+
+# Agent configuration for IoT devices
+agents:
+  monitoring:
+    update_interval: 1.0  # seconds
+    anomaly_threshold: 0.7
+    health_check_interval: 30  # seconds
+  
+  analysis:
+    confidence_threshold: 0.8
+    voc_thresholds:
+      voc_val: 250.0      # VOC level threshold
+      voc_delta: 50.0     # Change threshold
+      voc_vel: 20.0       # Rate of change threshold
+    fire_pattern:
+      enable_correlation_analysis: true
+      enable_trend_analysis: true
+  
+  response:
+    risk_levels: 5
+    alert_thresholds: [0.3, 0.5, 0.7, 0.85]
+    escalation_intervals: [30, 60, 120]  # seconds
+  
+  learning:
+    performance_metrics: ["accuracy", "precision", "recall", "f1"]
+    retraining_interval: 86400  # seconds (24 hours)
+
+# MQTT configuration for IoT communication
+mqtt:
+  enabled: true
+  broker: "localhost"
+  port: 1883
+  topics:
+    voc: "sensors/voc/+/data"
+    alerts: "alerts/fire"
+    health: "system/health"
+  qos: 1
+  keepalive: 60
+
+# AWS configuration for IoT
+aws:
+  region: "us-west-2"
+  profile: "default"
+  
+  s3:
+    default_bucket: "kitchen-fire-detection-data"
+    model_bucket: "kitchen-fire-detection-models"
+  
+  sagemaker:
+    role_arn: "arn:aws:iam::123456789012:role/SageMakerExecutionRole"
+    instance_type: "ml.m5.large"
+  
+  iot:
+    thing_name: "kitchen-fire-detector"
+    certificate_path: "certs/device.pem.crt"
+    private_key_path: "certs/private.pem.key"
+    ca_path: "certs/AmazonRootCA1.pem"
+
+# Notification configuration
+notifications:
+  email:
+    enabled: true
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    sender_email: "fire-alerts@yourdomain.com"
+    sender_password: "your-app-password"
+  
+  sms:
+    enabled: true
+    twilio_account_sid: "your-twilio-sid"
+    twilio_auth_token: "your-twilio-token"
+    twilio_phone_number: "+1234567890"
+  
+  push:
+    enabled: true
+    service_worker_path: "/static/firebase-messaging-sw.js"
+
+# Web interface configuration
+web:
+  host: "0.0.0.0"
+  port: 8501
+  base_url: "/dashboard"
+  api_prefix: "/api/v1"
+  
+  # Team access configuration
+  team_access:
+    enabled: true
+    allowed_emails:
+      - "ch.ajay1707@gmail.com"
+      - "team-member1@company.com"
+      - "team-member2@company.com"
+    auth_required: true

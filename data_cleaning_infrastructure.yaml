@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Infrastructure for AWS Glue data cleaning pipeline'
+
+Parameters:
+  InputBucketName:
+    Type: String
+    Description: S3 bucket containing raw datasets
+    Default: your-sensor-data-bucket
+  
+  OutputBucketName:
+    Type: String
+    Description: S3 bucket for cleaned datasets
+    Default: your-cleaned-data-bucket
+
+Resources:
+  # IAM Role for Glue
+  GlueServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: GlueDataCleaningRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+      Policies:
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "${InputBucketName}/*"
+                  - !Sub "${OutputBucketName}/*"
+                  - !Ref InputBucketName
+                  - !Ref OutputBucketName
+
+  # Glue Database
+  SensorDataDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: sensor_data_db
+        Description: Database for sensor anomaly detection datasets
+
+  # Glue Crawler for Arc Data
+  ArcDataCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: arc_data_crawler
+      Role: !GetAtt GlueServiceRole.Arn
+      DatabaseName: !Ref SensorDataDatabase
+      Targets:
+        S3Targets:
+          - Path: !Sub "s3://${InputBucketName}/synthetic-datasets/arc_data.csv"
+      SchemaChangePolicy:
+        UpdateBehavior: UPDATE_IN_DATABASE
+        DeleteBehavior: LOG
+
+  # Glue Job for Arc Data Cleaning
+  ArcDataCleaningJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: clean_arc_data_job
+      Role: !GetAtt GlueServiceRole.Arn
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${OutputBucketName}/glue-scripts/clean_arc_data_job.py"
+        PythonVersion: '3'
+      DefaultArguments:
+        '--job-language': python
+        '--job-bookmark-option': job-bookmark-disable
+        '--INPUT_PATH': !Sub "s3://${InputBucketName}/synthetic-datasets/arc_data.csv"
+        '--OUTPUT_PATH': !Sub "s3://${OutputBucketName}/cleaned-data/arc_data/"
+      MaxRetries: 0
+      Timeout: 60
+      GlueVersion: '3.0'
+
+  # CloudWatch Log Group for monitoring
+  GlueLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/glue/data-cleaning
+      RetentionInDays: 7
+
+Outputs:
+  GlueRoleArn:
+    Description: ARN of the Glue service role
+    Value: !GetAtt GlueServiceRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-GlueRoleArn"
+  
+  DatabaseName:
+    Description: Name of the Glue database
+    Value: !Ref SensorDataDatabase
+    Export:
+      Name: !Sub "${AWS::StackName}-DatabaseName"

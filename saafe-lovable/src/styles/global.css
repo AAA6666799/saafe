@@ -1,0 +1,6 @@
+
+html,body,#root{height:100%}
+*{box-sizing:border-box}
+body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(to bottom,#fff,#f8fafc)}
+button{font:inherit}
+table{border-collapse:collapse}

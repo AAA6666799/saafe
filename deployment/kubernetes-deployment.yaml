@@ -1,0 +1,217 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: saafe-fire-detection
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: saafe-config
+  namespace: saafe-fire-detection
+data:
+  system.config: |
+    {
+      "system": {
+        "name": "Saafe Fire Detection System",
+        "version": "1.0.0",
+        "log_level": "INFO"
+      },
+      "agents": {
+        "fire_detection": {
+          "enabled": true,
+          "update_interval": 1.0
+        },
+        "alert": {
+          "enabled": true,
+          "escalation_intervals": [30, 60, 120]
+        },
+        "monitoring": {
+          "enabled": true,
+          "health_check_interval": 30
+        }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: saafe-fire-detection
+  namespace: saafe-fire-detection
+  labels:
+    app: saafe-fire-detection
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: saafe-fire-detection
+  template:
+    metadata:
+      labels:
+        app: saafe-fire-detection
+    spec:
+      containers:
+      - name: saafe-fire-detection
+        image: saafe/fire-detection-system:latest
+        ports:
+        - containerPort: 8501
+        env:
+        - name: STREAMLIT_SERVER_HEADLESS
+          value: "true"
+        - name: STREAMLIT_SERVER_PORT
+          value: "8501"
+        - name: STREAMLIT_SERVER_ADDRESS
+          value: "0.0.0.0"
+        - name: AWS_DEFAULT_REGION
+          value: "us-west-2"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /home/saafe/app/config
+        - name: logs-volume
+          mountPath: /home/saafe/app/logs
+        - name: models-volume
+          mountPath: /home/saafe/app/models
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8501
+          initialDelaySeconds: 60
+          periodSeconds: 30
+      volumes:
+      - name: config-volume
+        configMap:
+          name: saafe-config
+      - name: logs-volume
+        emptyDir: {}
+      - name: models-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: saafe-fire-detection-service
+  namespace: saafe-fire-detection
+spec:
+  selector:
+    app: saafe-fire-detection
+  ports:
+    - protocol: TCP
+      port: 8501
+      targetPort: 8501
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: saafe-iot-agent
+  namespace: saafe-fire-detection
+  labels:
+    app: saafe-iot-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: saafe-iot-agent
+  template:
+    metadata:
+      labels:
+        app: saafe-iot-agent
+    spec:
+      containers:
+      - name: saafe-iot-agent
+        image: saafe/iot-agent:latest
+        env:
+        - name: IOT_CONFIG_PATH
+          value: "/home/saafe/app/config/iot_config.yaml"
+        - name: AWS_DEFAULT_REGION
+          value: "us-west-2"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /home/saafe/app/config
+        - name: logs-volume
+          mountPath: /home/saafe/app/logs
+      volumes:
+      - name: config-volume
+        configMap:
+          name: saafe-config
+      - name: logs-volume
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: saafe-alert-agent
+  namespace: saafe-fire-detection
+  labels:
+    app: saafe-alert-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: saafe-alert-agent
+  template:
+    metadata:
+      labels:
+        app: saafe-alert-agent
+    spec:
+      containers:
+      - name: saafe-alert-agent
+        image: saafe/alert-agent:latest
+        env:
+        - name: ALERT_CONFIG_PATH
+          value: "/home/saafe/app/config/alert_config.yaml"
+        - name: AWS_DEFAULT_REGION
+          value: "us-west-2"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /home/saafe/app/config
+        - name: logs-volume
+          mountPath: /home/saafe/app/logs
+      volumes:
+      - name: config-volume
+        configMap:
+          name: saafe-config
+      - name: logs-volume
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: saafe-monitoring-agent
+  namespace: saafe-fire-detection
+  labels:
+    app: saafe-monitoring-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: saafe-monitoring-agent
+  template:
+    metadata:
+      labels:
+        app: saafe-monitoring-agent
+    spec:
+      containers:
+      - name: saafe-monitoring-agent
+        image: saafe/monitoring-agent:latest
+        env:
+        - name: MONITORING_CONFIG_PATH
+          value: "/home/saafe/app/config/monitoring_config.yaml"
+        - name: AWS_DEFAULT_REGION
+          value: "us-west-2"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /home/saafe/app/config
+        - name: logs-volume
+          mountPath: /home/saafe/app/logs
+      volumes:
+      - name: config-volume
+        configMap:
+          name: saafe-config
+      - name: logs-volume
+        emptyDir: {}

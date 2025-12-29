@@ -1,0 +1,54 @@
+# Multi-stage build for SAAFE Lovable Dashboard
+
+# Stage 1: Build the frontend
+FROM node:18-alpine AS frontend-builder
+
+WORKDIR /app
+
+# Copy frontend package files
+COPY package*.json ./
+
+# Install frontend dependencies
+RUN npm ci
+
+# Copy frontend source
+COPY . .
+
+# Build the frontend
+RUN npm run build
+
+# Stage 2: Setup the backend
+FROM node:18-alpine AS backend
+
+WORKDIR /app
+
+# Copy backend package files
+COPY backend/package*.json ./backend/
+
+# Install backend dependencies
+RUN cd backend && npm ci --only=production
+
+# Copy backend source
+COPY backend/ ./backend/
+
+# Copy built frontend to backend
+COPY --from=frontend-builder /app/dist ./backend/dist/
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S saafe -u 1001
+
+# Change ownership of the app directory
+RUN chown -R saafe:nodejs /app
+USER saafe
+
+# Expose port 8000
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:8000/api/fire-detection-data', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+# Start the backend server
+WORKDIR /app/backend
+CMD ["npm", "start"]
